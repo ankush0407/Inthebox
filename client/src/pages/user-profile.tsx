@@ -15,6 +15,7 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import type { DeliveryLocation } from "@shared/schema";
 import Header from "@/components/layout/header";
+import { CartProvider } from "@/hooks/use-cart";
 
 const profileSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -80,47 +81,48 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      <div className="max-w-2xl mx-auto space-y-8 p-8">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
-          <p className="text-muted-foreground">Update your personal information and delivery preferences</p>
-        </div>
+    <CartProvider>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="max-w-2xl mx-auto space-y-8 p-8">
+          <div className="text-center">
+            <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
+            <p className="text-muted-foreground">Update your personal information and delivery preferences</p>
+          </div>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <User className="w-5 h-5" />
-              <span>Personal Information</span>
-            </CardTitle>
-            <CardDescription>
-              Keep your profile information up to date for seamless deliveries
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Form {...form}>
-              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-                <FormField
-                  control={form.control}
-                  name="fullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="flex items-center space-x-2">
-                        <User className="w-4 h-4" />
-                        <span>Full Name</span>
-                      </FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your full name" 
-                          {...field} 
-                          data-testid="input-profile-fullname"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <User className="w-5 h-5" />
+                <span>Personal Information</span>
+              </CardTitle>
+              <CardDescription>
+                Keep your profile information up to date for seamless deliveries
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                  <FormField
+                    control={form.control}
+                    name="fullName"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center space-x-2">
+                          <User className="w-4 h-4" />
+                          <span>Full Name</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="Enter your full name" 
+                            {...field} 
+                            data-testid="input-profile-fullname"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
                 <FormField
                   control={form.control}
@@ -183,13 +185,13 @@ export default function UserProfile() {
                     Save Profile
                   </Button>
                 </div>
-              </form>
-            </Form>
-          </CardContent>
-        </Card>
+                </form>
+              </Form>
+            </CardContent>
+          </Card>
 
-        {/* Profile Information Display */}
-        <Card>
+          {/* Profile Information Display */}
+          <Card>
           <CardHeader>
             <CardTitle>Account Information</CardTitle>
             <CardDescription>
@@ -220,8 +222,9 @@ export default function UserProfile() {
               </div>
             </div>
           </CardContent>
-        </Card>
+          </Card>
+        </div>
       </div>
-    </div>
+    </CartProvider>
   );
 }
