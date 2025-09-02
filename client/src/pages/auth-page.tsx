@@ -30,12 +30,6 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
-  // Redirect if already logged in (after hooks)
-  if (user) {
-    setLocation("/");
-    return null;
-  }
-
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -54,6 +48,12 @@ export default function AuthPage() {
       role: "customer",
     },
   });
+
+  // Redirect if already logged in (after all hooks)
+  if (user) {
+    setLocation("/");
+    return null;
+  }
 
   const onLogin = async (data: LoginFormData) => {
     try {
