@@ -1,5 +1,7 @@
 import passport from "passport";
 import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as GoogleStrategy } from "passport-google-oauth20";
+import { Strategy as FacebookStrategy } from "passport-facebook";
 import { Express } from "express";
 import session from "express-session";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
@@ -44,13 +46,96 @@ export function setupAuth(app: Express) {
   passport.use(
     new LocalStrategy(async (username, password, done) => {
       const user = await storage.getUserByUsername(username);
-      if (!user || !(await comparePasswords(password, user.password))) {
+      if (!user || !user.password || !(await comparePasswords(password, user.password))) {
         return done(null, false);
       } else {
         return done(null, user);
       }
     }),
   );
+
+  // Google OAuth Strategy
+  if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
+    passport.use(
+      new GoogleStrategy(
+        {
+          clientID: process.env.GOOGLE_CLIENT_ID,
+          clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+          callbackURL: "/api/auth/google/callback",
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            // Check if user already exists
+            let user = await storage.getUserByProviderId("google", profile.id);
+            
+            if (!user) {
+              // Check if user exists with same email
+              const existingUser = await storage.getUserByEmail(profile.emails?.[0]?.value || "");
+              if (existingUser) {
+                // Link existing account
+                user = await storage.linkOAuthAccount(existingUser.id, "google", profile.id);
+              } else {
+                // Create new user
+                user = await storage.createUser({
+                  username: profile.displayName || profile.emails?.[0]?.value?.split("@")[0] || `google_${profile.id}`,
+                  email: profile.emails?.[0]?.value || "",
+                  provider: "google",
+                  providerId: profile.id,
+                  role: "customer",
+                });
+              }
+            }
+            
+            return done(null, user);
+          } catch (error) {
+            return done(error);
+          }
+        }
+      )
+    );
+  }
+
+  // Facebook OAuth Strategy
+  if (process.env.FACEBOOK_APP_ID && process.env.FACEBOOK_APP_SECRET) {
+    passport.use(
+      new FacebookStrategy(
+        {
+          clientID: process.env.FACEBOOK_APP_ID,
+          clientSecret: process.env.FACEBOOK_APP_SECRET,
+          callbackURL: "/api/auth/facebook/callback",
+          profileFields: ["id", "displayName", "emails"],
+        },
+        async (accessToken, refreshToken, profile, done) => {
+          try {
+            // Check if user already exists
+            let user = await storage.getUserByProviderId("facebook", profile.id);
+            
+            if (!user) {
+              // Check if user exists with same email
+              const existingUser = await storage.getUserByEmail(profile.emails?.[0]?.value || "");
+              if (existingUser) {
+                // Link existing account
+                user = await storage.linkOAuthAccount(existingUser.id, "facebook", profile.id);
+              } else {
+                // Create new user
+                user = await storage.createUser({
+                  username: profile.displayName || profile.emails?.[0]?.value?.split("@")[0] || `facebook_${profile.id}`,
+                  email: profile.emails?.[0]?.value || "",
+                  provider: "facebook",
+                  providerId: profile.id,
+                  role: "customer",
+                });
+              }
+            }
+            
+            return done(null, user);
+          } catch (error) {
+            return done(error);
+          }
+        }
+      )
+    );
+  }
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
@@ -90,4 +175,29 @@ export function setupAuth(app: Express) {
     if (!req.isAuthenticated()) return res.sendStatus(401);
     res.json(req.user);
   });
+
+  // OAuth Routes
+  // Google OAuth
+  app.get("/api/auth/google",
+    passport.authenticate("google", { scope: ["profile", "email"] })
+  );
+
+  app.get("/api/auth/google/callback",
+    passport.authenticate("google", { failureRedirect: "/auth?error=google_failed" }),
+    (req, res) => {
+      res.redirect("/");
+    }
+  );
+
+  // Facebook OAuth
+  app.get("/api/auth/facebook",
+    passport.authenticate("facebook", { scope: ["email"] })
+  );
+
+  app.get("/api/auth/facebook/callback",
+    passport.authenticate("facebook", { failureRedirect: "/auth?error=facebook_failed" }),
+    (req, res) => {
+      res.redirect("/");
+    }
+  );
 }
