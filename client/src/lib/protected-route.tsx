@@ -29,5 +29,14 @@ export function ProtectedRoute({
     );
   }
 
+  // Redirect users with incomplete profiles to role selection
+  if (!user.profileComplete) {
+    return (
+      <Route path={path}>
+        <Redirect to="/role-selection" />
+      </Route>
+    );
+  }
+
   return <Component />
 }

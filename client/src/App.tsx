@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/use-auth";
 import { ProtectedRoute } from "./lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
+import RoleSelectionPage from "@/pages/role-selection";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import AdminPanel from "@/pages/admin-panel";
 import Checkout from "@/pages/checkout";
@@ -20,6 +21,7 @@ function Router() {
       <ProtectedRoute path="/admin-panel" component={AdminPanel} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/role-selection" component={RoleSelectionPage} />
       <Route component={NotFound} />
     </Switch>
   );

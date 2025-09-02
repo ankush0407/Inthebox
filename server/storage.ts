@@ -21,6 +21,7 @@ export interface IStorage {
   getUserByProviderId(provider: string, providerId: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
   linkOAuthAccount(userId: string, provider: string, providerId: string): Promise<User>;
+  completeProfile(userId: string, role: string): Promise<User>;
   
   // Restaurant operations
   getRestaurants(): Promise<Restaurant[]>;
@@ -95,6 +96,15 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .update(users)
       .set({ provider, providerId })
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async completeProfile(userId: string, role: string): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({ role: role as any, profileComplete: true })
       .where(eq(users.id, userId))
       .returning();
     return user;

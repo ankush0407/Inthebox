@@ -82,6 +82,7 @@ export function setupAuth(app: Express) {
                   provider: "google",
                   providerId: profile.id,
                   role: "customer",
+                  profileComplete: false,
                 });
               }
             }
@@ -124,6 +125,7 @@ export function setupAuth(app: Express) {
                   provider: "facebook",
                   providerId: profile.id,
                   role: "customer",
+                  profileComplete: false,
                 });
               }
             }
@@ -176,6 +178,31 @@ export function setupAuth(app: Express) {
     res.json(req.user);
   });
 
+  app.post("/api/complete-profile", async (req, res) => {
+    if (!req.isAuthenticated()) return res.sendStatus(401);
+    
+    try {
+      const { role } = req.body;
+      if (!role || !["customer", "restaurant_owner", "admin"].includes(role)) {
+        return res.status(400).json({ error: "Invalid role specified" });
+      }
+
+      const updatedUser = await storage.completeProfile(req.user.id, role);
+      if (!updatedUser) {
+        return res.status(404).json({ error: "User not found" });
+      }
+
+      // Update the session user
+      req.user.role = role;
+      req.user.profileComplete = true;
+
+      res.json(updatedUser);
+    } catch (error) {
+      console.error("Profile completion error:", error);
+      res.status(500).json({ error: "Failed to complete profile" });
+    }
+  });
+
   // OAuth Routes
   // Google OAuth
   app.get("/api/auth/google",
@@ -185,7 +212,12 @@ export function setupAuth(app: Express) {
   app.get("/api/auth/google/callback",
     passport.authenticate("google", { failureRedirect: "/auth?error=google_failed" }),
     (req, res) => {
-      res.redirect("/");
+      // Redirect new users to role selection, existing users to home
+      if (req.user && !req.user.profileComplete) {
+        res.redirect("/role-selection");
+      } else {
+        res.redirect("/");
+      }
     }
   );
 
@@ -197,7 +229,12 @@ export function setupAuth(app: Express) {
   app.get("/api/auth/facebook/callback",
     passport.authenticate("facebook", { failureRedirect: "/auth?error=facebook_failed" }),
     (req, res) => {
-      res.redirect("/");
+      // Redirect new users to role selection, existing users to home
+      if (req.user && !req.user.profileComplete) {
+        res.redirect("/role-selection");
+      } else {
+        res.redirect("/");
+      }
     }
   );
 }

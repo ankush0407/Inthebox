@@ -15,6 +15,7 @@ export const users = pgTable("users", {
   provider: text("provider").default("local"),
   providerId: text("provider_id"),
   role: userRoleEnum("role").notNull().default("customer"),
+  profileComplete: boolean("profile_complete").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
