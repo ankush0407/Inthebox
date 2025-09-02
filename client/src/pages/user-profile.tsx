@@ -14,6 +14,7 @@ import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import type { DeliveryLocation } from "@shared/schema";
+import Header from "@/components/layout/header";
 
 const profileSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -79,8 +80,9 @@ export default function UserProfile() {
   }
 
   return (
-    <div className="min-h-screen bg-background p-8">
-      <div className="max-w-2xl mx-auto space-y-8">
+    <div className="min-h-screen bg-background">
+      <Header />
+      <div className="max-w-2xl mx-auto space-y-8 p-8">
         <div className="text-center">
           <h1 className="text-3xl font-bold text-foreground">My Profile</h1>
           <p className="text-muted-foreground">Update your personal information and delivery preferences</p>
