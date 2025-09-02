@@ -16,6 +16,10 @@ export const users = pgTable("users", {
   providerId: text("provider_id"),
   role: userRoleEnum("role").notNull().default("customer"),
   profileComplete: boolean("profile_complete").default(true),
+  // Profile fields
+  fullName: text("full_name"),
+  phoneNumber: text("phone_number"),
+  deliveryLocationId: text("delivery_location_id"),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -67,6 +71,14 @@ export const orderItems = pgTable("order_items", {
   price: decimal("price", { precision: 10, scale: 2 }).notNull(),
 });
 
+export const deliveryLocations = pgTable("delivery_locations", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
 // Relations
 export const usersRelations = relations(users, ({ many, one }) => ({
   restaurant: one(restaurants, {
@@ -74,6 +86,10 @@ export const usersRelations = relations(users, ({ many, one }) => ({
     references: [restaurants.ownerId],
   }),
   orders: many(orders),
+  deliveryLocation: one(deliveryLocations, {
+    fields: [users.deliveryLocationId],
+    references: [deliveryLocations.id],
+  }),
 }));
 
 export const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
@@ -116,6 +132,10 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
   }),
 }));
 
+export const deliveryLocationsRelations = relations(deliveryLocations, ({ many }) => ({
+  users: many(users),
+}));
+
 // Insert schemas
 export const insertUserSchema = createInsertSchema(users).omit({
   id: true,
@@ -141,6 +161,11 @@ export const insertOrderItemSchema = createInsertSchema(orderItems).omit({
   id: true,
 });
 
+export const insertDeliveryLocationSchema = createInsertSchema(deliveryLocations).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -152,3 +177,5 @@ export type Order = typeof orders.$inferSelect;
 export type InsertOrder = z.infer<typeof insertOrderSchema>;
 export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
+export type DeliveryLocation = typeof deliveryLocations.$inferSelect;
+export type InsertDeliveryLocation = z.infer<typeof insertDeliveryLocationSchema>;

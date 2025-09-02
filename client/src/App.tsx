@@ -8,6 +8,7 @@ import { ProtectedRoute } from "./lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import RoleSelectionPage from "@/pages/role-selection";
+import UserProfile from "@/pages/user-profile";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import AdminPanel from "@/pages/admin-panel";
 import Checkout from "@/pages/checkout";
@@ -17,6 +18,7 @@ function Router() {
   return (
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
+      <ProtectedRoute path="/profile" component={UserProfile} />
       <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} />
       <ProtectedRoute path="/admin-panel" component={AdminPanel} />
       <ProtectedRoute path="/checkout" component={Checkout} />

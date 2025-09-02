@@ -226,6 +226,43 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Profile routes
+  app.get("/api/profile", (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+    res.json(req.user);
+  });
+
+  app.put("/api/profile", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const { fullName, phoneNumber, deliveryLocationId } = req.body;
+      const updatedUser = await storage.updateUserProfile(req.user!.id, {
+        fullName,
+        phoneNumber,
+        deliveryLocationId,
+      });
+      res.json(updatedUser);
+    } catch (error: any) {
+      console.error("Profile update error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
+  app.get("/api/delivery-locations", async (req, res) => {
+    try {
+      const locations = await storage.getDeliveryLocations();
+      res.json(locations);
+    } catch (error: any) {
+      console.error("Get delivery locations error:", error);
+      res.status(500).json({ error: error.message });
+    }
+  });
+
   const httpServer = createServer(app);
   return httpServer;
 }

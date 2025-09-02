@@ -1,10 +1,11 @@
 import { 
-  users, restaurants, lunchboxes, orders, orderItems,
+  users, restaurants, lunchboxes, orders, orderItems, deliveryLocations,
   type User, type InsertUser,
   type Restaurant, type InsertRestaurant,
   type Lunchbox, type InsertLunchbox,
   type Order, type InsertOrder,
-  type OrderItem, type InsertOrderItem
+  type OrderItem, type InsertOrderItem,
+  type DeliveryLocation, type InsertDeliveryLocation
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -22,6 +23,10 @@ export interface IStorage {
   createUser(user: InsertUser): Promise<User>;
   linkOAuthAccount(userId: string, provider: string, providerId: string): Promise<User>;
   completeProfile(userId: string, role: string): Promise<User>;
+  updateUserProfile(userId: string, profile: { fullName?: string; phoneNumber?: string; deliveryLocationId?: string }): Promise<User>;
+  
+  // Delivery location operations
+  getDeliveryLocations(): Promise<DeliveryLocation[]>;
   
   // Restaurant operations
   getRestaurants(): Promise<Restaurant[]>;
@@ -220,6 +225,19 @@ export class DatabaseStorage implements IStorage {
 
   async getOrderItems(orderId: string): Promise<OrderItem[]> {
     return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+  }
+
+  async updateUserProfile(userId: string, profile: { fullName?: string; phoneNumber?: string; deliveryLocationId?: string }): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set(profile)
+      .where(eq(users.id, userId))
+      .returning();
+    return user;
+  }
+
+  async getDeliveryLocations(): Promise<DeliveryLocation[]> {
+    return await db.select().from(deliveryLocations).where(eq(deliveryLocations.isActive, true));
   }
 }
 

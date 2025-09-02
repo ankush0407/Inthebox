@@ -126,6 +126,10 @@ export default function Header() {
                     {user?.role?.replace("_", " ")}
                   </div>
                 </div>
+                <DropdownMenuItem onClick={() => setLocation("/profile")} data-testid="menu-profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+                </DropdownMenuItem>
                 {user?.role === "customer" && (
                   <DropdownMenuItem onClick={() => setLocation("/orders")} data-testid="menu-orders">
                     <Receipt className="mr-2 h-4 w-4" />
