@@ -45,6 +45,7 @@ export const lunchboxes = pgTable("lunchboxes", {
   imageUrl: text("image_url"),
   isAvailable: boolean("is_available").default(true),
   dietaryTags: text("dietary_tags").array(),
+  availableDays: text("available_days").array().default(sql`'{monday,tuesday,wednesday,thursday,friday}'`),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
   createdAt: timestamp("created_at").defaultNow(),
 });

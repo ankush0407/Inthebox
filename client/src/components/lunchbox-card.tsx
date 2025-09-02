@@ -3,7 +3,7 @@ import { useCart } from "@/hooks/use-cart";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
-import { Utensils, Plus } from "lucide-react";
+import { Utensils, Plus, Calendar } from "lucide-react";
 
 interface LunchboxCardProps {
   lunchbox: Lunchbox;
@@ -56,20 +56,31 @@ export default function LunchboxCard({ lunchbox, restaurantName }: LunchboxCardP
           {lunchbox.description}
         </p>
         
-        {lunchbox.dietaryTags && lunchbox.dietaryTags.length > 0 && (
-          <div className="flex items-center space-x-2 flex-wrap">
-            {lunchbox.dietaryTags.map(tag => (
-              <Badge 
-                key={tag} 
-                variant="outline" 
-                className="text-xs bg-accent/10 text-accent border-accent/20"
-                data-testid={`lunchbox-tag-${tag}-${lunchbox.id}`}
-              >
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+        <div className="space-y-2">
+          {lunchbox.dietaryTags && lunchbox.dietaryTags.length > 0 && (
+            <div className="flex items-center space-x-2 flex-wrap">
+              {lunchbox.dietaryTags.map(tag => (
+                <Badge 
+                  key={tag} 
+                  variant="outline" 
+                  className="text-xs bg-accent/10 text-accent border-accent/20"
+                  data-testid={`lunchbox-tag-${tag}-${lunchbox.id}`}
+                >
+                  {tag}
+                </Badge>
+              ))}
+            </div>
+          )}
+          
+          {lunchbox.availableDays && lunchbox.availableDays.length > 0 && (
+            <div className="flex items-center space-x-1">
+              <Calendar className="w-3 h-3 text-muted-foreground" />
+              <span className="text-xs text-muted-foreground">
+                {lunchbox.availableDays.map(day => day.slice(0, 3).toUpperCase()).join(", ")}
+              </span>
+            </div>
+          )}
+        </div>
       </div>
       
       <div className="text-right flex-shrink-0">

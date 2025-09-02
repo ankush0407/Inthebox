@@ -10,15 +10,24 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Filter, SortAsc } from "lucide-react";
+import { MapPin, Filter, SortAsc, Calendar } from "lucide-react";
 
 const locations = ["Amazon SLU", "Amazon Bellevue", "Amazon Redmond"];
 const cuisineTypes = ["All", "Mediterranean", "Japanese", "Italian", "American", "Vegetarian"];
+const weekDays = [
+  { value: "all", label: "All Days" },
+  { value: "monday", label: "Monday" },
+  { value: "tuesday", label: "Tuesday" },
+  { value: "wednesday", label: "Wednesday" },
+  { value: "thursday", label: "Thursday" },
+  { value: "friday", label: "Friday" }
+];
 
 export default function HomePage() {
   const [selectedLocation, setSelectedLocation] = useState("Amazon SLU");
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState("All");
+  const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("all");
 
   const { data: restaurants, isLoading: restaurantsLoading } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
@@ -31,6 +40,10 @@ export default function HomePage() {
 
   const filteredRestaurants = restaurants?.filter(restaurant => 
     selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase())
+  ) || [];
+
+  const filteredLunchboxes = lunchboxes?.filter(lunchbox => 
+    selectedDeliveryDay === "all" || lunchbox.availableDays?.includes(selectedDeliveryDay)
   ) || [];
 
   return (
@@ -83,33 +96,46 @@ export default function HomePage() {
           <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
             {/* Main Content */}
             <div className="lg:col-span-3">
-              {/* Category Filters */}
+              {/* Filters */}
               <section className="mb-8">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-lg font-semibold text-foreground">Browse by Cuisine</h3>
+                  <h3 className="text-lg font-semibold text-foreground">Filters</h3>
                   <div className="flex items-center space-x-4">
-                    <Button variant="outline" size="sm" data-testid="button-filter">
-                      <Filter className="w-4 h-4 mr-2" />
-                      Filter
-                    </Button>
+                    <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
+                      <SelectTrigger className="w-[180px]" data-testid="select-delivery-day">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {weekDays.map(day => (
+                          <SelectItem key={day.value} value={day.value}>
+                            {day.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Button variant="outline" size="sm" data-testid="button-sort">
                       <SortAsc className="w-4 h-4 mr-2" />
                       Sort
                     </Button>
                   </div>
                 </div>
-                <div className="flex flex-wrap gap-3">
-                  {cuisineTypes.map(cuisine => (
-                    <Badge
-                      key={cuisine}
-                      variant={selectedCuisine === cuisine ? "default" : "secondary"}
-                      className="cursor-pointer"
-                      onClick={() => setSelectedCuisine(cuisine)}
-                      data-testid={`badge-cuisine-${cuisine.toLowerCase()}`}
-                    >
-                      {cuisine}
-                    </Badge>
-                  ))}
+                
+                <div>
+                  <h4 className="text-sm font-medium text-foreground mb-3">Cuisine Type</h4>
+                  <div className="flex flex-wrap gap-3">
+                    {cuisineTypes.map(cuisine => (
+                      <Badge
+                        key={cuisine}
+                        variant={selectedCuisine === cuisine ? "default" : "secondary"}
+                        className="cursor-pointer"
+                        onClick={() => setSelectedCuisine(cuisine)}
+                        data-testid={`badge-cuisine-${cuisine.toLowerCase()}`}
+                      >
+                        {cuisine}
+                      </Badge>
+                    ))}
+                  </div>
                 </div>
               </section>
 
@@ -173,13 +199,26 @@ export default function HomePage() {
                       </div>
                     ) : (
                       <div className="space-y-4">
-                        {lunchboxes?.map(lunchbox => (
-                          <LunchboxCard 
-                            key={lunchbox.id} 
-                            lunchbox={lunchbox} 
-                            restaurantName={selectedRestaurant.name}
-                          />
-                        ))}
+                        {filteredLunchboxes.length > 0 ? (
+                          filteredLunchboxes.map(lunchbox => (
+                            <LunchboxCard 
+                              key={lunchbox.id} 
+                              lunchbox={lunchbox} 
+                              restaurantName={selectedRestaurant.name}
+                            />
+                          ))
+                        ) : (
+                          <div className="text-center py-8">
+                            <Calendar className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                            <h4 className="text-lg font-semibold text-foreground mb-2">No lunchboxes available</h4>
+                            <p className="text-muted-foreground">
+                              {selectedDeliveryDay === "all" 
+                                ? "This restaurant has no lunchboxes available." 
+                                : `No lunchboxes available for ${weekDays.find(d => d.value === selectedDeliveryDay)?.label}.`
+                              }
+                            </p>
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

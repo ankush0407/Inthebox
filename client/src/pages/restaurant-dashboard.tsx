@@ -15,7 +15,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut, Calendar } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true });
@@ -57,6 +58,7 @@ export default function RestaurantDashboard() {
       imageUrl: "",
       isAvailable: true,
       dietaryTags: [],
+      availableDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
     },
   });
 
@@ -292,6 +294,39 @@ export default function RestaurantDashboard() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="availableDays"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center space-x-2">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Available Days</span>
+                                </FormLabel>
+                                <div className="grid grid-cols-3 gap-3">
+                                  {["monday", "tuesday", "wednesday", "thursday", "friday"].map((day) => (
+                                    <div key={day} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={day}
+                                        checked={field.value?.includes(day)}
+                                        onCheckedChange={(checked) => {
+                                          const updatedDays = checked
+                                            ? [...(field.value || []), day]
+                                            : field.value?.filter((d: string) => d !== day) || [];
+                                          field.onChange(updatedDays);
+                                        }}
+                                        data-testid={`checkbox-day-${day}`}
+                                      />
+                                      <label htmlFor={day} className="text-sm font-medium capitalize cursor-pointer">
+                                        {day.slice(0, 3)}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                           <div className="flex space-x-2">
                             <Button type="submit" disabled={addLunchboxMutation.isPending} data-testid="button-submit-lunchbox">
                               Add Lunchbox
@@ -340,6 +375,12 @@ export default function RestaurantDashboard() {
                             {lunchbox.dietaryTags?.map(tag => (
                               <Badge key={tag} variant="outline">{tag}</Badge>
                             ))}
+                          </div>
+                          <div className="flex items-center space-x-1 mt-2">
+                            <Calendar className="w-3 h-3 text-muted-foreground" />
+                            <span className="text-xs text-muted-foreground">
+                              {lunchbox.availableDays?.map(day => day.slice(0, 3).toUpperCase()).join(", ") || "All days"}
+                            </span>
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
