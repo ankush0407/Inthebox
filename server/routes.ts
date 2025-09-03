@@ -57,6 +57,30 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.put("/api/restaurants/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const restaurant = await storage.getRestaurant(req.params.id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+
+      // Check if user owns this restaurant or is admin
+      if (restaurant.ownerId !== req.user.id && req.user.role !== "admin") {
+        return res.sendStatus(403);
+      }
+
+      const updates = insertRestaurantSchema.partial().parse(req.body);
+      const updatedRestaurant = await storage.updateRestaurant(req.params.id, updates);
+      res.json(updatedRestaurant);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating restaurant: " + error.message });
+    }
+  });
+
   // Lunchbox routes
   app.get("/api/restaurants/:restaurantId/lunchboxes", async (req, res) => {
     try {

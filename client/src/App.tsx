@@ -11,6 +11,7 @@ import RoleSelectionPage from "@/pages/role-selection";
 import UserProfile from "@/pages/user-profile";
 import Orders from "@/pages/orders";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
+import RestaurantProfile from "@/pages/restaurant-profile";
 import AdminPanel from "@/pages/admin-panel";
 import Checkout from "@/pages/checkout";
 import NotFound from "@/pages/not-found";
@@ -20,6 +21,7 @@ function Router() {
     <Switch>
       <ProtectedRoute path="/" component={HomePage} />
       <ProtectedRoute path="/profile" component={UserProfile} />
+      <ProtectedRoute path="/restaurant-profile" component={RestaurantProfile} />
       <ProtectedRoute path="/orders" component={Orders} />
       <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} />
       <ProtectedRoute path="/admin-panel" component={AdminPanel} />

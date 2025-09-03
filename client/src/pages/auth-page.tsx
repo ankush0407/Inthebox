@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
@@ -49,11 +49,12 @@ export default function AuthPage() {
     },
   });
 
-  // Redirect if already logged in (after all hooks)
-  if (user) {
-    setLocation("/");
-    return null;
-  }
+  // Redirect if already logged in (use useEffect to avoid setState during render)
+  useEffect(() => {
+    if (user) {
+      setLocation("/");
+    }
+  }, [user, setLocation]);
 
   const onLogin = async (data: LoginFormData) => {
     try {
@@ -286,7 +287,7 @@ export default function AuthPage() {
                           <FormItem>
                             <FormLabel>Password</FormLabel>
                             <FormControl>
-                              <Input type="password" placeholder="Create a password" {...field} data-testid="input-register-password" />
+                              <Input type="password" placeholder="Create a password" {...field} value={field.value || ""} data-testid="input-register-password" />
                             </FormControl>
                             <FormMessage />
                           </FormItem>
