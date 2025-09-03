@@ -10,20 +10,21 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "@/components/ui/form";
-import { Loader2, Store, Upload, User, Clock, DollarSign, Save } from "lucide-react";
+import { Loader2, Store, Upload, User, DollarSign, Save, ImageIcon } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { queryClient, apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import type { Restaurant } from "@shared/schema";
 import Header from "@/components/layout/header";
 import { CartProvider } from "@/hooks/use-cart";
+import { ObjectUploader } from "@/components/ObjectUploader";
+import type { UploadResult } from "@uppy/core";
 
 const restaurantProfileSchema = z.object({
   name: z.string().min(1, "Restaurant name is required"),
   description: z.string().min(10, "Description must be at least 10 characters"),
   cuisine: z.string().min(1, "Cuisine type is required"),
-  imageUrl: z.string().url("Please enter a valid image URL").optional().or(z.literal("")),
-  deliveryTime: z.string().min(1, "Delivery time is required"),
+  imageUrl: z.string().optional().or(z.literal("")),
   deliveryFee: z.string().min(1, "Delivery fee is required"),
 });
 
@@ -33,6 +34,7 @@ export default function RestaurantProfile() {
   const { user } = useAuth();
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
+  const [logoUrl, setLogoUrl] = useState("");
 
   // Fetch restaurant data for the current user
   const { data: restaurant, isLoading: restaurantLoading } = useQuery<Restaurant>({
@@ -51,7 +53,6 @@ export default function RestaurantProfile() {
       description: "",
       cuisine: "",
       imageUrl: "",
-      deliveryTime: "",
       deliveryFee: "",
     },
   });
@@ -64,9 +65,9 @@ export default function RestaurantProfile() {
         description: restaurant.description || "",
         cuisine: restaurant.cuisine || "",
         imageUrl: restaurant.imageUrl || "",
-        deliveryTime: restaurant.deliveryTime || "",
         deliveryFee: restaurant.deliveryFee || "",
       });
+      setLogoUrl(restaurant.imageUrl || "");
     }
   }, [restaurant, form]);
 
@@ -190,98 +191,98 @@ export default function RestaurantProfile() {
                     )}
                   />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="cuisine"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Cuisine Type</FormLabel>
-                          <Select onValueChange={field.onChange} value={field.value}>
-                            <FormControl>
-                              <SelectTrigger data-testid="select-restaurant-cuisine">
-                                <SelectValue placeholder="Select cuisine type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {cuisineOptions.map((cuisine) => (
-                                <SelectItem key={cuisine} value={cuisine.toLowerCase()}>
-                                  {cuisine}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="deliveryTime"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center space-x-2">
-                            <Clock className="w-4 h-4" />
-                            <span>Delivery Time</span>
-                          </FormLabel>
+                  <FormField
+                    control={form.control}
+                    name="cuisine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cuisine Type</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
                           <FormControl>
-                            <Input 
-                              placeholder="e.g., 30-45 mins" 
-                              {...field} 
-                              data-testid="input-restaurant-delivery-time"
-                            />
+                            <SelectTrigger data-testid="select-restaurant-cuisine">
+                              <SelectValue placeholder="Select cuisine type" />
+                            </SelectTrigger>
                           </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                  </div>
+                          <SelectContent>
+                            {cuisineOptions.map((cuisine) => (
+                              <SelectItem key={cuisine} value={cuisine.toLowerCase()}>
+                                {cuisine}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="deliveryFee"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center space-x-2">
-                            <DollarSign className="w-4 h-4" />
-                            <span>Delivery Fee</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="e.g., 2.99" 
-                              type="number"
-                              step="0.01"
-                              {...field} 
-                              data-testid="input-restaurant-delivery-fee"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <FormField
+                    control={form.control}
+                    name="deliveryFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="flex items-center space-x-2">
+                          <DollarSign className="w-4 h-4" />
+                          <span>Delivery Fee</span>
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            placeholder="e.g., 2.99" 
+                            type="number"
+                            step="0.01"
+                            {...field} 
+                            data-testid="input-restaurant-delivery-fee"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
 
-                    <FormField
-                      control={form.control}
-                      name="imageUrl"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="flex items-center space-x-2">
-                            <Upload className="w-4 h-4" />
-                            <span>Restaurant Logo/Image URL</span>
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="https://example.com/logo.jpg" 
-                              {...field} 
-                              data-testid="input-restaurant-image"
-                            />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
+                  <div className="space-y-4">
+                    <div>
+                      <Label className="flex items-center space-x-2 mb-2">
+                        <ImageIcon className="w-4 h-4" />
+                        <span>Restaurant Logo</span>
+                      </Label>
+                      
+                      {logoUrl && (
+                        <div className="mb-4">
+                          <img 
+                            src={logoUrl} 
+                            alt="Restaurant logo" 
+                            className="w-32 h-32 object-cover rounded-lg border"
+                            data-testid="img-restaurant-logo"
+                          />
+                        </div>
                       )}
-                    />
+                      
+                      <ObjectUploader
+                        maxNumberOfFiles={1}
+                        maxFileSize={5242880}
+                        onGetUploadParameters={async () => {
+                          const res = await apiRequest("POST", "/api/objects/upload");
+                          const data = await res.json();
+                          return { method: "PUT" as const, url: data.uploadURL };
+                        }}
+                        onComplete={(result) => {
+                          if (result.successful && result.successful.length > 0) {
+                            const uploadedFile = result.successful[0];
+                            const imageUrl = uploadedFile.uploadURL?.split('?')[0] || "";
+                            setLogoUrl(imageUrl);
+                            form.setValue("imageUrl", imageUrl);
+                            toast({
+                              title: "Logo uploaded successfully",
+                              description: "Your restaurant logo has been updated.",
+                            });
+                          }
+                        }}
+                        buttonClassName="w-full"
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {logoUrl ? "Change Logo" : "Upload Logo"}
+                      </ObjectUploader>
+                    </div>
                   </div>
 
                   <div className="pt-6">
@@ -309,7 +310,7 @@ export default function RestaurantProfile() {
                 <span>Owner Information</span>
               </CardTitle>
               <CardDescription>
-                Your account details as restaurant owner
+                Your account details as restaurant owner (not editable - update in regular profile)
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
