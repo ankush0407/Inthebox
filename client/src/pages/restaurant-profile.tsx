@@ -26,6 +26,9 @@ const restaurantProfileSchema = z.object({
   cuisine: z.string().min(1, "Cuisine type is required"),
   imageUrl: z.string().optional().or(z.literal("")),
   deliveryFee: z.string().min(1, "Delivery fee is required"),
+  // Owner information fields
+  ownerFullName: z.string().min(1, "Full name is required"),
+  ownerPhoneNumber: z.string().optional(),
 });
 
 type RestaurantProfileFormData = z.infer<typeof restaurantProfileSchema>;
@@ -54,6 +57,8 @@ export default function RestaurantProfile() {
       cuisine: "",
       imageUrl: "",
       deliveryFee: "",
+      ownerFullName: "",
+      ownerPhoneNumber: "",
     },
   });
 
@@ -66,22 +71,40 @@ export default function RestaurantProfile() {
         cuisine: restaurant.cuisine || "",
         imageUrl: restaurant.imageUrl || "",
         deliveryFee: restaurant.deliveryFee || "",
+        ownerFullName: user?.fullName || "",
+        ownerPhoneNumber: user?.phoneNumber || "",
       });
       setLogoUrl(restaurant.imageUrl || "");
+    } else if (user) {
+      // Set owner information even when creating new restaurant
+      form.setValue("ownerFullName", user.fullName || "");
+      form.setValue("ownerPhoneNumber", user.phoneNumber || "");
     }
-  }, [restaurant, form]);
+  }, [restaurant, form, user]);
 
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantProfileFormData) => {
+      // First update user profile with owner information
+      const userUpdateData = {
+        fullName: data.ownerFullName,
+        phoneNumber: data.ownerPhoneNumber,
+      };
+      await apiRequest("PUT", `/api/users/${user?.id}`, userUpdateData);
+      
+      // Then update restaurant data
       const endpoint = restaurant ? `/api/restaurants/${restaurant.id}` : "/api/restaurants";
       const method = restaurant ? "PUT" : "POST";
       
-      const requestData = {
-        ...data,
+      const restaurantData = {
+        name: data.name,
+        description: data.description,
+        cuisine: data.cuisine,
+        imageUrl: data.imageUrl,
+        deliveryFee: data.deliveryFee,
         ownerId: user?.id,
       };
 
-      const res = await apiRequest(method, endpoint, requestData);
+      const res = await apiRequest(method, endpoint, restaurantData);
       return await res.json();
     },
     onSuccess: (updatedRestaurant) => {
@@ -302,7 +325,7 @@ export default function RestaurantProfile() {
             </CardContent>
           </Card>
 
-          {/* Owner Information Display */}
+          {/* Owner Information Form */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center space-x-2">
@@ -310,30 +333,57 @@ export default function RestaurantProfile() {
                 <span>Owner Information</span>
               </CardTitle>
               <CardDescription>
-                Your account details as restaurant owner (not editable - update in regular profile)
+                Update your contact information as restaurant owner
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <FormField
+                  control={form.control}
+                  name="ownerFullName"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Full Name</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your full name" 
+                          {...field} 
+                          data-testid="input-owner-fullname"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
+                <FormField
+                  control={form.control}
+                  name="ownerPhoneNumber"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Phone Number</FormLabel>
+                      <FormControl>
+                        <Input 
+                          placeholder="Enter your phone number" 
+                          {...field} 
+                          data-testid="input-owner-phone"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                
                 <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Owner Name</Label>
-                  <p className="text-foreground" data-testid="text-owner-name">
-                    {user?.fullName || user?.username}
+                  <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
+                  <p className="text-foreground mt-1" data-testid="text-owner-email">
+                    {user?.email} <span className="text-muted-foreground text-sm">(Cannot be changed here)</span>
                   </p>
                 </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Owner Email</Label>
-                  <p className="text-foreground" data-testid="text-owner-email">{user?.email}</p>
-                </div>
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Phone Number</Label>
-                  <p className="text-foreground" data-testid="text-owner-phone">
-                    {user?.phoneNumber || "Not provided"}
-                  </p>
-                </div>
+                
                 <div>
                   <Label className="text-sm font-medium text-muted-foreground">Account Type</Label>
-                  <p className="text-foreground capitalize" data-testid="text-owner-role">
+                  <p className="text-foreground capitalize mt-1" data-testid="text-owner-role">
                     Restaurant Owner
                   </p>
                 </div>
