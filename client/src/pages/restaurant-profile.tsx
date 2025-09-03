@@ -89,7 +89,7 @@ export default function RestaurantProfile() {
         fullName: data.ownerFullName,
         phoneNumber: data.ownerPhoneNumber,
       };
-      await apiRequest("PUT", `/api/users/${user?.id}`, userUpdateData);
+      await apiRequest("PUT", "/api/profile", userUpdateData);
       
       // Then update restaurant data
       const endpoint = restaurant ? `/api/restaurants/${restaurant.id}` : "/api/restaurants";
@@ -308,6 +308,71 @@ export default function RestaurantProfile() {
                     </div>
                   </div>
 
+                  {/* Owner Information Section */}
+                  <div className="pt-6 border-t">
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold flex items-center space-x-2">
+                        <User className="w-5 h-5" />
+                        <span>Owner Information</span>
+                      </h3>
+                      <p className="text-sm text-muted-foreground mt-1">
+                        Update your contact information as restaurant owner
+                      </p>
+                    </div>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <FormField
+                        control={form.control}
+                        name="ownerFullName"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Full Name</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your full name" 
+                                {...field} 
+                                data-testid="input-owner-fullname"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <FormField
+                        control={form.control}
+                        name="ownerPhoneNumber"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Phone Number</FormLabel>
+                            <FormControl>
+                              <Input 
+                                placeholder="Enter your phone number" 
+                                {...field} 
+                                data-testid="input-owner-phone"
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
+                        <p className="text-foreground mt-1" data-testid="text-owner-email">
+                          {user?.email} <span className="text-muted-foreground text-sm">(Cannot be changed here)</span>
+                        </p>
+                      </div>
+                      
+                      <div>
+                        <Label className="text-sm font-medium text-muted-foreground">Account Type</Label>
+                        <p className="text-foreground capitalize mt-1" data-testid="text-owner-role">
+                          Restaurant Owner
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="pt-6">
                     <Button 
                       type="submit" 
@@ -317,77 +382,11 @@ export default function RestaurantProfile() {
                     >
                       {updateRestaurantMutation.isPending && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                       <Save className="mr-2 h-4 w-4" />
-                      {restaurant ? "Update Restaurant" : "Create Restaurant"}
+                      {restaurant ? "Update Restaurant & Owner Info" : "Create Restaurant & Save Owner Info"}
                     </Button>
                   </div>
                 </form>
               </Form>
-            </CardContent>
-          </Card>
-
-          {/* Owner Information Form */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center space-x-2">
-                <User className="w-5 h-5" />
-                <span>Owner Information</span>
-              </CardTitle>
-              <CardDescription>
-                Update your contact information as restaurant owner
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <FormField
-                  control={form.control}
-                  name="ownerFullName"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Full Name</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your full name" 
-                          {...field} 
-                          data-testid="input-owner-fullname"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <FormField
-                  control={form.control}
-                  name="ownerPhoneNumber"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Phone Number</FormLabel>
-                      <FormControl>
-                        <Input 
-                          placeholder="Enter your phone number" 
-                          {...field} 
-                          data-testid="input-owner-phone"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Email Address</Label>
-                  <p className="text-foreground mt-1" data-testid="text-owner-email">
-                    {user?.email} <span className="text-muted-foreground text-sm">(Cannot be changed here)</span>
-                  </p>
-                </div>
-                
-                <div>
-                  <Label className="text-sm font-medium text-muted-foreground">Account Type</Label>
-                  <p className="text-foreground capitalize mt-1" data-testid="text-owner-role">
-                    Restaurant Owner
-                  </p>
-                </div>
-              </div>
             </CardContent>
           </Card>
         </div>
