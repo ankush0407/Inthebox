@@ -26,6 +26,7 @@ const restaurantProfileSchema = z.object({
   cuisine: z.string().min(1, "Cuisine type is required"),
   imageUrl: z.string().optional().or(z.literal("")),
   deliveryFee: z.string().min(1, "Delivery fee is required"),
+  deliveryLocationId: z.string().min(1, "Delivery location is required"),
   // Owner information fields
   ownerFullName: z.string().min(1, "Full name is required"),
   ownerPhoneNumber: z.string().optional(),
@@ -49,6 +50,15 @@ export default function RestaurantProfile() {
     enabled: !!user?.id,
   });
 
+  // Fetch delivery locations
+  const { data: deliveryLocations } = useQuery({
+    queryKey: ["/api/delivery-locations"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/delivery-locations");
+      return await res.json();
+    },
+  });
+
   const form = useForm<RestaurantProfileFormData>({
     resolver: zodResolver(restaurantProfileSchema),
     defaultValues: {
@@ -57,6 +67,7 @@ export default function RestaurantProfile() {
       cuisine: "",
       imageUrl: "",
       deliveryFee: "",
+      deliveryLocationId: "",
       ownerFullName: "",
       ownerPhoneNumber: "",
     },
@@ -71,6 +82,7 @@ export default function RestaurantProfile() {
         cuisine: restaurant.cuisine || "",
         imageUrl: restaurant.imageUrl || "",
         deliveryFee: restaurant.deliveryFee || "",
+        deliveryLocationId: restaurant.deliveryLocationId || "",
         ownerFullName: user?.fullName || "",
         ownerPhoneNumber: user?.phoneNumber || "",
       });
@@ -101,6 +113,7 @@ export default function RestaurantProfile() {
         cuisine: data.cuisine,
         imageUrl: data.imageUrl,
         deliveryFee: data.deliveryFee,
+        deliveryLocationId: data.deliveryLocationId,
         ownerId: user?.id,
       };
 
@@ -257,6 +270,31 @@ export default function RestaurantProfile() {
                             data-testid="input-restaurant-delivery-fee"
                           />
                         </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <FormField
+                    control={form.control}
+                    name="deliveryLocationId"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Location</FormLabel>
+                        <Select onValueChange={field.onChange} value={field.value}>
+                          <FormControl>
+                            <SelectTrigger data-testid="select-delivery-location">
+                              <SelectValue placeholder="Select delivery location" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            {deliveryLocations?.map((location: any) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name} - {location.address}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
                         <FormMessage />
                       </FormItem>
                     )}

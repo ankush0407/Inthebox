@@ -197,6 +197,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Delivery locations routes
+  app.get("/api/delivery-locations", async (req, res) => {
+    try {
+      const locations = await storage.getDeliveryLocations();
+      res.json(locations);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching delivery locations: " + error.message });
+    }
+  });
+
   // Order routes
   app.post("/api/orders", async (req, res) => {
     if (!req.isAuthenticated()) {

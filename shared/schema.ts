@@ -32,6 +32,7 @@ export const restaurants = pgTable("restaurants", {
   rating: decimal("rating", { precision: 2, scale: 1 }).default("0.0"),
   deliveryTime: text("delivery_time"),
   deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).notNull(),
+  deliveryLocationId: varchar("delivery_location_id").references(() => deliveryLocations.id),
   isActive: boolean("is_active").default(true),
   ownerId: varchar("owner_id").references(() => users.id),
   createdAt: timestamp("created_at").defaultNow(),
@@ -97,6 +98,10 @@ export const restaurantsRelations = relations(restaurants, ({ many, one }) => ({
   owner: one(users, {
     fields: [restaurants.ownerId],
     references: [users.id],
+  }),
+  deliveryLocation: one(deliveryLocations, {
+    fields: [restaurants.deliveryLocationId],
+    references: [deliveryLocations.id],
   }),
   lunchboxes: many(lunchboxes),
   orders: many(orders),
