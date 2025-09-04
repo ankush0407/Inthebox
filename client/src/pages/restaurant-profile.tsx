@@ -290,7 +290,10 @@ export default function RestaurantProfile() {
                           <SelectContent>
                             {deliveryLocations?.map((location: any) => (
                               <SelectItem key={location.id} value={location.id}>
-                                {location.name} - {location.address}
+                                <div className="flex flex-col">
+                                  <span className="font-medium">{location.name}</span>
+                                  <span className="text-sm text-muted-foreground">{location.address}</span>
+                                </div>
                               </SelectItem>
                             ))}
                           </SelectContent>
