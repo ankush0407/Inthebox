@@ -233,7 +233,7 @@ export default function RestaurantDashboard() {
                         Add Item
                       </Button>
                     </DialogTrigger>
-                    <DialogContent>
+                    <DialogContent className="max-h-[85vh] overflow-y-auto">
                       <DialogHeader>
                         <DialogTitle>Add New Lunchbox</DialogTitle>
                         <DialogDescription>
