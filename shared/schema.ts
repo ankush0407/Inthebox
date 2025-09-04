@@ -30,7 +30,7 @@ export const restaurants = pgTable("restaurants", {
   cuisine: text("cuisine").notNull(),
   imageUrl: text("image_url"),
   rating: decimal("rating", { precision: 2, scale: 1 }).default("0.0"),
-  deliveryTime: text("delivery_time").notNull(),
+  deliveryTime: text("delivery_time"),
   deliveryFee: decimal("delivery_fee", { precision: 10, scale: 2 }).notNull(),
   isActive: boolean("is_active").default(true),
   ownerId: varchar("owner_id").references(() => users.id),
