@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MapPin, Filter, SortAsc, Calendar } from "lucide-react";
+import { apiRequest } from "@/lib/queryClient";
 
 const locations = ["Amazon SLU", "Amazon Bellevue", "Amazon Redmond"];
 const cuisineTypes = ["All", "Mediterranean", "Japanese", "Italian", "American", "Vegetarian"];
@@ -29,6 +30,15 @@ export default function HomePage() {
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("all");
 
+  // Fetch delivery locations
+  const { data: deliveryLocations } = useQuery({
+    queryKey: ["/api/delivery-locations"],
+    queryFn: async () => {
+      const res = await apiRequest("GET", "/api/delivery-locations");
+      return await res.json();
+    },
+  });
+
   const { data: restaurants, isLoading: restaurantsLoading } = useQuery<Restaurant[]>({
     queryKey: ["/api/restaurants"],
   });
@@ -38,9 +48,17 @@ export default function HomePage() {
     enabled: !!selectedRestaurant,
   });
 
-  const filteredRestaurants = restaurants?.filter(restaurant => 
-    selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase())
-  ) || [];
+  // Find selected location ID
+  const selectedLocationId = deliveryLocations?.find(
+    (location: any) => location.name === selectedLocation
+  )?.id;
+
+  const filteredRestaurants = restaurants?.filter(restaurant => {
+    const cuisineMatch = selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
+    // Filter by delivery location - if restaurant has no location set, show it for all locations
+    const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
+    return cuisineMatch && locationMatch;
+  }) || [];
 
   const filteredLunchboxes = lunchboxes?.filter(lunchbox => 
     selectedDeliveryDay === "all" || lunchbox.availableDays?.includes(selectedDeliveryDay)
@@ -72,9 +90,9 @@ export default function HomePage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      {locations.map(location => (
-                        <SelectItem key={location} value={location}>
-                          {location}
+                      {deliveryLocations?.map((location: any) => (
+                        <SelectItem key={location.id} value={location.name}>
+                          {location.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -82,7 +100,14 @@ export default function HomePage() {
                 </div>
                 <Button 
                   className="bg-primary text-primary-foreground hover:bg-primary/90"
-                  onClick={() => setSelectedRestaurant(null)}
+                  onClick={() => {
+                    setSelectedRestaurant(null);
+                    // Scroll to restaurants section
+                    const restaurantsSection = document.getElementById('restaurants-section');
+                    if (restaurantsSection) {
+                      restaurantsSection.scrollIntoView({ behavior: 'smooth' });
+                    }
+                  }}
                   data-testid="button-browse-restaurants"
                 >
                   Browse Restaurants
@@ -225,7 +250,7 @@ export default function HomePage() {
                 </section>
               ) : (
                 /* Restaurant Grid */
-                <section className="mb-12">
+                <section id="restaurants-section" className="mb-12">
                   <h2 className="text-2xl font-bold text-foreground mb-6">Featured Restaurants</h2>
                   
                   {restaurantsLoading ? (
