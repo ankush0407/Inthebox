@@ -27,6 +27,8 @@ export default function RestaurantDashboard() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editingLunchbox, setEditingLunchbox] = useState<Lunchbox | null>(null);
 
   // Redirect non-restaurant owners
   if (user && user.role !== "restaurant_owner" && user.role !== "admin") {
@@ -85,6 +87,50 @@ export default function RestaurantDashboard() {
     },
   });
 
+  const updateLunchboxMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PUT", `/api/lunchboxes/${editingLunchbox?.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", restaurant?.id, "lunchboxes"] });
+      setIsEditDialogOpen(false);
+      setEditingLunchbox(null);
+      form.reset();
+      toast({
+        title: "Success",
+        description: "Lunchbox updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteLunchboxMutation = useMutation({
+    mutationFn: async (lunchboxId: string) => {
+      await apiRequest("DELETE", `/api/lunchboxes/${lunchboxId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants", restaurant?.id, "lunchboxes"] });
+      toast({
+        title: "Success",
+        description: "Lunchbox deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
@@ -107,7 +153,31 @@ export default function RestaurantDashboard() {
   });
 
   const onSubmit = (data: any) => {
-    addLunchboxMutation.mutate(data);
+    if (editingLunchbox) {
+      updateLunchboxMutation.mutate(data);
+    } else {
+      addLunchboxMutation.mutate(data);
+    }
+  };
+
+  const handleEditLunchbox = (lunchbox: Lunchbox) => {
+    setEditingLunchbox(lunchbox);
+    form.reset({
+      name: lunchbox.name,
+      description: lunchbox.description,
+      price: lunchbox.price.toString(),
+      imageUrl: lunchbox.imageUrl || "",
+      isAvailable: lunchbox.isAvailable ?? true,
+      dietaryTags: (lunchbox.dietaryTags || []) as string[],
+      availableDays: lunchbox.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
+    });
+    setIsEditDialogOpen(true);
+  };
+
+  const handleDeleteLunchbox = (lunchboxId: string) => {
+    if (confirm("Are you sure you want to delete this lunchbox?")) {
+      deleteLunchboxMutation.mutate(lunchboxId);
+    }
   };
 
   const handleLogout = async () => {
@@ -339,6 +409,119 @@ export default function RestaurantDashboard() {
                       </Form>
                     </DialogContent>
                   </Dialog>
+
+                  {/* Edit Dialog */}
+                  <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+                    <DialogContent className="max-h-[85vh] overflow-y-auto">
+                      <DialogHeader>
+                        <DialogTitle>Edit Lunchbox</DialogTitle>
+                        <DialogDescription>
+                          Update your lunchbox details
+                        </DialogDescription>
+                      </DialogHeader>
+                      <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="name"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Name</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="Lunchbox name" {...field} data-testid="input-edit-lunchbox-name" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="description"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Description</FormLabel>
+                                <FormControl>
+                                  <Textarea placeholder="Describe the lunchbox contents" {...field} data-testid="textarea-edit-lunchbox-description" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="price"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Price</FormLabel>
+                                <FormControl>
+                                  <Input type="number" step="0.01" placeholder="19.99" {...field} data-testid="input-edit-lunchbox-price" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="imageUrl"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Image URL (optional)</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-edit-lunchbox-image" />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="availableDays"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel className="flex items-center space-x-2">
+                                  <Calendar className="w-4 h-4" />
+                                  <span>Available Days</span>
+                                </FormLabel>
+                                <div className="grid grid-cols-3 gap-3">
+                                  {["monday", "tuesday", "wednesday", "thursday", "friday"].map((day) => (
+                                    <div key={day} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        id={`edit-${day}`}
+                                        checked={field.value?.includes(day)}
+                                        onCheckedChange={(checked) => {
+                                          const updatedDays = checked
+                                            ? [...(field.value || []), day]
+                                            : field.value?.filter((d: string) => d !== day) || [];
+                                          field.onChange(updatedDays);
+                                        }}
+                                        data-testid={`checkbox-edit-day-${day}`}
+                                      />
+                                      <label htmlFor={`edit-${day}`} className="text-sm font-medium capitalize cursor-pointer">
+                                        {day.slice(0, 3)}
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <div className="flex space-x-2">
+                            <Button type="submit" disabled={updateLunchboxMutation.isPending} data-testid="button-update-lunchbox">
+                              {updateLunchboxMutation.isPending ? "Updating..." : "Update Lunchbox"}
+                            </Button>
+                            <Button type="button" variant="outline" onClick={() => {
+                              setIsEditDialogOpen(false);
+                              setEditingLunchbox(null);
+                              form.reset();
+                            }}>
+                              Cancel
+                            </Button>
+                          </div>
+                        </form>
+                      </Form>
+                    </DialogContent>
+                  </Dialog>
                 </div>
               </CardHeader>
               <CardContent>
@@ -384,10 +567,20 @@ export default function RestaurantDashboard() {
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button variant="ghost" size="sm" data-testid={`button-edit-${lunchbox.id}`}>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleEditLunchbox(lunchbox)}
+                            data-testid={`button-edit-${lunchbox.id}`}
+                          >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm" data-testid={`button-delete-${lunchbox.id}`}>
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            onClick={() => handleDeleteLunchbox(lunchbox.id)}
+                            data-testid={`button-delete-${lunchbox.id}`}
+                          >
                             <Trash2 className="w-4 h-4" />
                           </Button>
                         </div>

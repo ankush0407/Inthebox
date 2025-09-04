@@ -174,6 +174,29 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  app.delete("/api/lunchboxes/:id", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const lunchbox = await storage.getLunchbox(req.params.id);
+      if (!lunchbox) {
+        return res.status(404).json({ message: "Lunchbox not found" });
+      }
+
+      const restaurant = await storage.getRestaurant(lunchbox.restaurantId!);
+      if (!restaurant || (restaurant.ownerId !== req.user.id && req.user.role !== "admin")) {
+        return res.sendStatus(403);
+      }
+
+      await storage.deleteLunchbox(req.params.id);
+      res.sendStatus(204);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error deleting lunchbox: " + error.message });
+    }
+  });
+
   // Order routes
   app.post("/api/orders", async (req, res) => {
     if (!req.isAuthenticated()) {
