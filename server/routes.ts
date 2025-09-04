@@ -76,12 +76,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
   });
 
   app.post("/api/restaurants", async (req, res) => {
-    if (!req.isAuthenticated() || req.user.role !== "admin") {
+    if (!req.isAuthenticated() || !["admin", "restaurant_owner"].includes(req.user.role)) {
       return res.sendStatus(403);
     }
 
     try {
       const restaurantData = insertRestaurantSchema.parse(req.body);
+      // Ensure the restaurant is assigned to the current user if they're a restaurant owner
+      if (req.user.role === "restaurant_owner") {
+        restaurantData.ownerId = req.user.id;
+      }
       const restaurant = await storage.createRestaurant(restaurantData);
       res.status(201).json(restaurant);
     } catch (error: any) {
