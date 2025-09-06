@@ -46,7 +46,6 @@ export default function ShoppingCart({ selectedLocation }: ShoppingCartProps) {
             Change
           </Button>
         </div>
-        <p className="text-xs text-muted-foreground mt-1">Estimated delivery: 25-35 min</p>
       </div>
 
       {/* Cart Items */}
