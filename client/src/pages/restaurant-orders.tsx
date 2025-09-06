@@ -464,7 +464,8 @@ export default function RestaurantOrders() {
                           <TableHead>Order #</TableHead>
                           <TableHead>Customer</TableHead>
                           <TableHead>Items</TableHead>
-                          <TableHead>Total</TableHead>
+                          <TableHead>Quantity</TableHead>
+                          <TableHead>Price</TableHead>
                           <TableHead>Location</TableHead>
                           <TableHead>Delivery Day</TableHead>
                           <TableHead>Status</TableHead>
@@ -488,7 +489,7 @@ export default function RestaurantOrders() {
                             <TableCell>
                               <div>
                                 <div className="font-medium" data-testid={`customer-name-${order.id}`}>
-                                  {order.customer?.fullName || "Unknown"}
+                                  {order.customer?.fullName || order.customer?.email?.split('@')[0] || "Unknown"}
                                 </div>
                                 <div className="text-sm text-muted-foreground">
                                   {order.customer?.email}
@@ -498,16 +499,29 @@ export default function RestaurantOrders() {
                             <TableCell>
                               <div className="space-y-1">
                                 {order.items.map((item) => (
-                                  <div key={item.id} className="text-sm">
-                                    <span className="font-medium">{item.lunchbox?.name || "Item"}</span>
-                                    <span className="text-muted-foreground ml-1">×{item.quantity}</span>
-                                    <span className="ml-2">${parseFloat(item.price).toFixed(2)}</span>
+                                  <div key={item.id} className="text-sm font-medium">
+                                    {item.lunchbox?.name || "Item"}
                                   </div>
                                 ))}
                               </div>
                             </TableCell>
-                            <TableCell className="font-medium">
-                              ${parseFloat(order.total).toFixed(2)}
+                            <TableCell>
+                              <div className="space-y-1">
+                                {order.items.map((item) => (
+                                  <div key={item.id} className="text-sm">
+                                    {item.quantity}
+                                  </div>
+                                ))}
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                {order.items.map((item) => (
+                                  <div key={item.id} className="text-sm">
+                                    ${parseFloat(item.price).toFixed(2)}
+                                  </div>
+                                ))}
+                              </div>
                             </TableCell>
                             <TableCell>{order.deliveryLocation}</TableCell>
                             <TableCell className="capitalize">
