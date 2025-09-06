@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useLocationContext } from "@/contexts/location-context";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -7,14 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { ArrowLeft, CreditCard, MapPin, ShoppingBag } from "lucide-react";
 
-const locations = ["Amazon SLU", "Amazon Bellevue", "Amazon Redmond"];
 
 export default function Checkout() {
   const [, setLocation] = useLocation();
@@ -22,7 +21,7 @@ export default function Checkout() {
   const { items, subtotal, clearCart, deliveryFee } = useCart();
   const { toast } = useToast();
   const queryClient = useQueryClient();
-  const [selectedLocation, setSelectedLocation] = useState("Amazon SLU");
+  const { selectedLocation } = useLocationContext();
 
   // Redirect if cart is empty
   if (items.length === 0) {
@@ -132,30 +131,21 @@ export default function Checkout() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {/* Order Details */}
           <div className="space-y-6">
-            {/* Delivery Location */}
+            {/* Delivery Information */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <MapPin className="w-5 h-5" />
-                  <span>Delivery Location</span>
+                  <span>Delivery Information</span>
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   <div>
-                    <Label htmlFor="delivery-location">Select Location</Label>
-                    <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                      <SelectTrigger className="mt-2" data-testid="select-delivery-location">
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {locations.map(location => (
-                          <SelectItem key={location} value={location}>
-                            {location}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
+                    <Label>Delivery Location</Label>
+                    <div className="mt-2 p-3 bg-muted rounded-lg">
+                      <span className="font-medium text-foreground">{selectedLocation}</span>
+                    </div>
                   </div>
                   <div>
                     <Label htmlFor="delivery-notes">Delivery Notes (optional)</Label>
