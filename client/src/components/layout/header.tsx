@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
+import { useLocationContext } from "@/contexts/location-context";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -12,6 +13,7 @@ export default function Header() {
   const [, setLocation] = useLocation();
   const { user, logoutMutation } = useAuth();
   const { itemCount } = useCart();
+  const { selectedLocation } = useLocationContext();
 
   const handleLogout = async () => {
     try {
@@ -75,7 +77,7 @@ export default function Header() {
             {/* Location Indicator */}
             <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 text-primary" />
-              <span data-testid="current-location">Amazon SLU</span>
+              <span data-testid="current-location">{selectedLocation}</span>
             </div>
 
             {/* Cart */}

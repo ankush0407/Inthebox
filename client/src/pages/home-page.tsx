@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { Restaurant, Lunchbox } from "@shared/schema";
+import { useLocationContext } from "@/contexts/location-context";
 import Header from "@/components/layout/header";
 import ShoppingCart from "@/components/layout/shopping-cart";
 import RestaurantCard from "@/components/restaurant-card";
@@ -24,7 +25,7 @@ const weekDays = [
 ];
 
 export default function HomePage() {
-  const [selectedLocation, setSelectedLocation] = useState("Amazon SLU");
+  const { selectedLocation, setSelectedLocation } = useLocationContext();
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("all");
