@@ -13,7 +13,8 @@ import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock } from "lucide-react";
+import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
+import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock, User } from "lucide-react";
 
 
 export default function Checkout() {
@@ -29,6 +30,55 @@ export default function Checkout() {
   if (items.length === 0) {
     setLocation("/");
     return null;
+  }
+
+  // Check if profile is complete before allowing checkout
+  if (!isProfileComplete(user)) {
+    return (
+      <div className="min-h-screen bg-background">
+        <div className="max-w-2xl mx-auto p-8 space-y-6">
+          <Button
+            variant="ghost"
+            onClick={() => setLocation("/")}
+            className="mb-4"
+            data-testid="button-back-home"
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Menu
+          </Button>
+
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center space-x-2">
+                <User className="w-5 h-5" />
+                <span>Complete Your Profile</span>
+              </CardTitle>
+              <CardDescription>
+                {getProfileCompletionMessage()}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <p className="text-muted-foreground">
+                  To proceed with your order, please provide the following information:
+                </p>
+                <ul className="list-disc list-inside space-y-2 text-muted-foreground">
+                  <li>Full Name</li>
+                  <li>Phone Number</li>
+                </ul>
+                <Button 
+                  onClick={() => setLocation("/profile")}
+                  className="w-full"
+                  data-testid="button-complete-profile"
+                >
+                  Complete Profile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // Group items by restaurant

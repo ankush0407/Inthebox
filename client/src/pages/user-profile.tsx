@@ -95,7 +95,7 @@ export default function UserProfile() {
                 <span>Personal Information</span>
               </CardTitle>
               <CardDescription>
-                Keep your profile information up to date for seamless deliveries
+                Complete your profile information to place orders. Fields marked with * are required.
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -108,7 +108,7 @@ export default function UserProfile() {
                       <FormItem>
                         <FormLabel className="flex items-center space-x-2">
                           <User className="w-4 h-4" />
-                          <span>Full Name</span>
+                          <span>Full Name *</span>
                         </FormLabel>
                         <FormControl>
                           <Input 
@@ -129,7 +129,7 @@ export default function UserProfile() {
                     <FormItem>
                       <FormLabel className="flex items-center space-x-2">
                         <Phone className="w-4 h-4" />
-                        <span>Phone Number</span>
+                        <span>Phone Number *</span>
                       </FormLabel>
                       <FormControl>
                         <Input 

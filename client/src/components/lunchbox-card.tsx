@@ -1,9 +1,12 @@
 import { Lunchbox } from "@shared/schema";
 import { useCart } from "@/hooks/use-cart";
+import { useAuth } from "@/hooks/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
 import { Utensils, Plus, Calendar } from "lucide-react";
+import { useLocation } from "wouter";
 
 interface LunchboxCardProps {
   lunchbox: Lunchbox;
@@ -13,7 +16,9 @@ interface LunchboxCardProps {
 
 export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliveryFee }: LunchboxCardProps) {
   const { addItem } = useCart();
+  const { user } = useAuth();
   const { toast } = useToast();
+  const [, setLocation] = useLocation();
 
   const handleAddToCart = () => {
     if (!lunchbox.isAvailable) {
@@ -21,6 +26,21 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
         title: "Item Unavailable",
         description: "This lunchbox is currently not available.",
         variant: "destructive",
+      });
+      return;
+    }
+
+    // Check if user profile is complete before adding to cart
+    if (!isProfileComplete(user)) {
+      toast({
+        title: "Complete Your Profile",
+        description: getProfileCompletionMessage(),
+        variant: "destructive",
+        action: (
+          <Button variant="outline" size="sm" onClick={() => setLocation("/profile")}>
+            Complete Profile
+          </Button>
+        )
       });
       return;
     }
