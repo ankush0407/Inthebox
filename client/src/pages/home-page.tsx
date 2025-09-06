@@ -42,6 +42,30 @@ export default function HomePage() {
     queryKey: ["/api/restaurants"],
   });
 
+  // Fetch all lunchboxes for all restaurants to enable day-based restaurant filtering
+  const { data: allLunchboxes } = useQuery<Record<string, Lunchbox[]>>({
+    queryKey: ["/api/restaurants", "all-lunchboxes"],
+    queryFn: async () => {
+      if (!restaurants) return {};
+      
+      const lunchboxPromises = restaurants.map(async (restaurant) => {
+        const res = await apiRequest("GET", `/api/restaurants/${restaurant.id}/lunchboxes`);
+        const lunchboxes = await res.json();
+        return { restaurantId: restaurant.id, lunchboxes };
+      });
+      
+      const results = await Promise.all(lunchboxPromises);
+      const lunchboxesByRestaurant: Record<string, Lunchbox[]> = {};
+      
+      results.forEach(({ restaurantId, lunchboxes }) => {
+        lunchboxesByRestaurant[restaurantId] = lunchboxes;
+      });
+      
+      return lunchboxesByRestaurant;
+    },
+    enabled: !!restaurants && restaurants.length > 0,
+  });
+
   const { data: lunchboxes, isLoading: lunchboxesLoading } = useQuery<Lunchbox[]>({
     queryKey: ["/api/restaurants", selectedRestaurant?.id, "lunchboxes"],
     enabled: !!selectedRestaurant,
@@ -56,7 +80,16 @@ export default function HomePage() {
     const cuisineMatch = selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
     // Filter by delivery location - if restaurant has no location set, show it for all locations
     const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
-    return cuisineMatch && locationMatch;
+    
+    // Filter by day availability - only show restaurants that have lunchboxes available for the selected day
+    const dayMatch = selectedDeliveryDay === "all" || (() => {
+      const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
+      return restaurantLunchboxes.some(lunchbox => 
+        lunchbox.availableDays?.includes(selectedDeliveryDay)
+      );
+    })();
+    
+    return cuisineMatch && locationMatch && dayMatch;
   }) || [];
 
   const filteredLunchboxes = lunchboxes?.filter(lunchbox => 
