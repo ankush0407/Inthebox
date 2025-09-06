@@ -83,6 +83,9 @@ export default function HomePage() {
       // Filter by delivery location - if restaurant has no location set, show it for all locations
       const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
       
+      // Debug logging
+      console.log(`Restaurant: ${restaurant.name}, deliveryLocationId: ${restaurant.deliveryLocationId}, selectedLocationId: ${selectedLocationId}, locationMatch: ${locationMatch}`);
+      
       // Filter by day availability - only show restaurants that have lunchboxes available for the selected day
       const dayMatch = selectedDeliveryDay === "all" || (() => {
         const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
