@@ -487,13 +487,8 @@ export default function RestaurantOrders() {
                               #{order.orderNumber || order.id.slice(0, 8)}
                             </TableCell>
                             <TableCell>
-                              <div>
-                                <div className="font-medium" data-testid={`customer-name-${order.id}`}>
-                                  {order.customer?.fullName || order.customer?.email?.split('@')[0] || "Unknown"}
-                                </div>
-                                <div className="text-sm text-muted-foreground">
-                                  {order.customer?.email}
-                                </div>
+                              <div className="font-medium" data-testid={`customer-name-${order.id}`}>
+                                {order.customer?.fullName || order.customer?.email?.split('@')[0] || "Unknown"}
                               </div>
                             </TableCell>
                             <TableCell>
