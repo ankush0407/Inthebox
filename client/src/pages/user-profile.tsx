@@ -15,7 +15,6 @@ import { queryClient, apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
 import type { DeliveryLocation } from "@shared/schema";
 import Header from "@/components/layout/header";
-import { CartProvider } from "@/hooks/use-cart";
 
 const profileSchema = z.object({
   fullName: z.string().min(1, "Full name is required"),
@@ -81,8 +80,7 @@ export default function UserProfile() {
   }
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-2xl mx-auto space-y-8 p-8">
           <div className="text-center">
@@ -225,6 +223,5 @@ export default function UserProfile() {
           </Card>
         </div>
       </div>
-    </CartProvider>
   );
 }

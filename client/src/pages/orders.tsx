@@ -6,7 +6,6 @@ import { Separator } from "@/components/ui/separator";
 import { Loader2, Package, Clock, CheckCircle, XCircle, Receipt } from "lucide-react";
 import { format } from "date-fns";
 import Header from "@/components/layout/header";
-import { CartProvider } from "@/hooks/use-cart";
 import type { Order } from "@shared/schema";
 
 export default function Orders() {
@@ -48,20 +47,17 @@ export default function Orders() {
 
   if (isLoading) {
     return (
-      <CartProvider>
-        <div className="min-h-screen bg-background">
-          <Header />
-          <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-            <Loader2 className="h-8 w-8 animate-spin text-border" />
-          </div>
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <Loader2 className="h-8 w-8 animate-spin text-border" />
         </div>
-      </CartProvider>
+      </div>
     );
   }
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background">
         <Header />
         <div className="max-w-4xl mx-auto p-8 space-y-8">
           <div className="text-center">
@@ -139,6 +135,5 @@ export default function Orders() {
           )}
         </div>
       </div>
-    </CartProvider>
   );
 }
