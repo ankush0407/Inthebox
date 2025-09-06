@@ -8,11 +8,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, CreditCard, MapPin, ShoppingBag } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock } from "lucide-react";
 
 
 export default function Checkout() {
@@ -22,6 +23,7 @@ export default function Checkout() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const { selectedLocation } = useLocationContext();
+  const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("");
 
   // Redirect if cart is empty
   if (items.length === 0) {
@@ -42,6 +44,21 @@ export default function Checkout() {
   // Check if items are from multiple restaurants
   const restaurantNames = Object.keys(itemsByRestaurant);
   const isMultiRestaurant = restaurantNames.length > 1;
+
+  // Get available delivery days from cart items
+  const availableDeliveryDays = Array.from(
+    new Set(
+      items.flatMap(item => item.lunchbox.availableDays || [])
+    )
+  ).sort((a, b) => {
+    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+    return dayOrder.indexOf(a.toLowerCase()) - dayOrder.indexOf(b.toLowerCase());
+  });
+
+  // Set default delivery day if not selected
+  if (!selectedDeliveryDay && availableDeliveryDays.length > 0) {
+    setSelectedDeliveryDay(availableDeliveryDays[0]);
+  }
 
   const serviceFee = 1.50;
   const taxRate = 0.10;
@@ -148,13 +165,26 @@ export default function Checkout() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="delivery-notes">Delivery Notes (optional)</Label>
-                    <Input 
-                      id="delivery-notes"
-                      placeholder="Building number, floor, special instructions..."
-                      className="mt-2"
-                      data-testid="input-delivery-notes"
-                    />
+                    <Label htmlFor="delivery-day">Delivery Day</Label>
+                    <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
+                      <SelectTrigger className="mt-2" data-testid="select-delivery-day">
+                        <Calendar className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Select delivery day" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {availableDeliveryDays.map(day => (
+                          <SelectItem key={day} value={day}>
+                            {day.charAt(0).toUpperCase() + day.slice(1)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center space-x-2">
+                      <Clock className="w-4 h-4 text-blue-600" />
+                      <span className="text-sm font-medium text-blue-800">Estimated Delivery - Before 12:30PM at Building Reception</span>
+                    </div>
                   </div>
                 </div>
               </CardContent>
