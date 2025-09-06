@@ -2,12 +2,8 @@ import { useState } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useCart } from "@/hooks/use-cart";
 import { useLocation } from "wouter";
-import { useQuery } from "@tanstack/react-query";
-import { apiRequest } from "@/lib/queryClient";
-import { useLocationContext } from "@/contexts/location-context";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Utensils, MapPin, ShoppingCart, User, LogOut, Settings, Receipt } from "lucide-react";
@@ -16,16 +12,6 @@ export default function Header() {
   const [, setLocation] = useLocation();
   const { user, logoutMutation } = useAuth();
   const { itemCount } = useCart();
-  const { selectedLocation, setSelectedLocation } = useLocationContext();
-
-  // Fetch delivery locations
-  const { data: deliveryLocations } = useQuery({
-    queryKey: ["/api/delivery-locations"],
-    queryFn: async () => {
-      const res = await apiRequest("GET", "/api/delivery-locations");
-      return await res.json();
-    },
-  });
 
   const handleLogout = async () => {
     try {
@@ -62,14 +48,6 @@ export default function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            <Button 
-              variant="ghost" 
-              className="text-foreground hover:text-primary"
-              onClick={() => setLocation("/")}
-              data-testid="nav-browse"
-            >
-              Browse
-            </Button>
             {user?.role === "restaurant_owner" && (
               <Button 
                 variant="ghost" 
@@ -94,21 +72,10 @@ export default function Header() {
 
           {/* User Actions */}
           <div className="flex items-center space-x-4">
-            {/* Location Selector */}
-            <div className="hidden sm:flex items-center space-x-2">
+            {/* Location Indicator */}
+            <div className="hidden sm:flex items-center space-x-2 text-sm text-muted-foreground">
               <MapPin className="w-4 h-4 text-primary" />
-              <Select value={selectedLocation} onValueChange={setSelectedLocation}>
-                <SelectTrigger className="w-[140px] border-0 bg-transparent text-muted-foreground hover:text-foreground text-sm h-auto p-0" data-testid="header-location-select">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {deliveryLocations?.map((location: any) => (
-                    <SelectItem key={location.id} value={location.name}>
-                      {location.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              <span data-testid="current-location">Amazon SLU</span>
             </div>
 
             {/* Cart */}
