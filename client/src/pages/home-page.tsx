@@ -28,6 +28,7 @@ export default function HomePage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("all");
+  const [sortBy, setSortBy] = useState("featured");
 
   // Fetch delivery locations
   const { data: deliveryLocations } = useQuery({
@@ -76,21 +77,41 @@ export default function HomePage() {
     (location: any) => location.name === selectedLocation
   )?.id;
 
-  const filteredRestaurants = restaurants?.filter(restaurant => {
-    const cuisineMatch = selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
-    // Filter by delivery location - if restaurant has no location set, show it for all locations
-    const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
-    
-    // Filter by day availability - only show restaurants that have lunchboxes available for the selected day
-    const dayMatch = selectedDeliveryDay === "all" || (() => {
-      const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
-      return restaurantLunchboxes.some(lunchbox => 
-        lunchbox.availableDays?.includes(selectedDeliveryDay)
-      );
-    })();
-    
-    return cuisineMatch && locationMatch && dayMatch;
-  }) || [];
+  const filteredAndSortedRestaurants = (() => {
+    const filtered = restaurants?.filter(restaurant => {
+      const cuisineMatch = selectedCuisine === "All" || restaurant.cuisine.toLowerCase().includes(selectedCuisine.toLowerCase());
+      // Filter by delivery location - if restaurant has no location set, show it for all locations
+      const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
+      
+      // Filter by day availability - only show restaurants that have lunchboxes available for the selected day
+      const dayMatch = selectedDeliveryDay === "all" || (() => {
+        const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
+        return restaurantLunchboxes.some(lunchbox => 
+          lunchbox.availableDays?.includes(selectedDeliveryDay)
+        );
+      })();
+      
+      return cuisineMatch && locationMatch && dayMatch;
+    }) || [];
+
+    // Sort restaurants based on selected sort option
+    return filtered.sort((a, b) => {
+      switch (sortBy) {
+        case "name":
+          return a.name.localeCompare(b.name);
+        case "cuisine":
+          return a.cuisine.localeCompare(b.cuisine);
+        case "rating":
+          // For now, random sort since we don't have ratings
+          return Math.random() - 0.5;
+        case "newest":
+          // Sort by ID as a proxy for newest (latest created)
+          return b.id.localeCompare(a.id);
+        default: // "featured"
+          return 0; // Keep original order for featured
+      }
+    });
+  })();
 
   const filteredLunchboxes = lunchboxes?.filter(lunchbox => 
     selectedDeliveryDay === "all" || lunchbox.availableDays?.includes(selectedDeliveryDay)
@@ -170,10 +191,19 @@ export default function HomePage() {
                         ))}
                       </SelectContent>
                     </Select>
-                    <Button variant="outline" size="sm" data-testid="button-sort">
-                      <SortAsc className="w-4 h-4 mr-2" />
-                      Sort
-                    </Button>
+                    <Select value={sortBy} onValueChange={setSortBy}>
+                      <SelectTrigger className="w-[180px]" data-testid="select-sort">
+                        <SortAsc className="w-4 h-4 mr-2" />
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="featured">Featured</SelectItem>
+                        <SelectItem value="name">Name A-Z</SelectItem>
+                        <SelectItem value="cuisine">Cuisine Type</SelectItem>
+                        <SelectItem value="newest">Newest</SelectItem>
+                        <SelectItem value="rating">Rating</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
                 </div>
                 
@@ -299,7 +329,7 @@ export default function HomePage() {
                     </div>
                   ) : (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-                      {filteredRestaurants.map(restaurant => (
+                      {filteredAndSortedRestaurants.map(restaurant => (
                         <RestaurantCard 
                           key={restaurant.id} 
                           restaurant={restaurant} 
