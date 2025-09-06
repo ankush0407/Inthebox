@@ -12,9 +12,7 @@ interface ShoppingCartProps {
 
 export default function ShoppingCart({ selectedLocation }: ShoppingCartProps) {
   const [, setLocation] = useLocation();
-  const { items, updateQuantity, removeItem, subtotal, itemCount } = useCart();
-
-  const deliveryFee = 2.99;
+  const { items, updateQuantity, removeItem, subtotal, itemCount, deliveryFee } = useCart();
   const serviceFee = 1.50;
   const taxRate = 0.10;
   const tax = subtotal * taxRate;

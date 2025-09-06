@@ -19,7 +19,7 @@ const locations = ["Amazon SLU", "Amazon Bellevue", "Amazon Redmond"];
 export default function Checkout() {
   const [, setLocation] = useLocation();
   const { user } = useAuth();
-  const { items, subtotal, clearCart } = useCart();
+  const { items, subtotal, clearCart, deliveryFee } = useCart();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [selectedLocation, setSelectedLocation] = useState("Amazon SLU");
@@ -44,7 +44,6 @@ export default function Checkout() {
   const restaurantNames = Object.keys(itemsByRestaurant);
   const isMultiRestaurant = restaurantNames.length > 1;
 
-  const deliveryFee = 2.99;
   const serviceFee = 1.50;
   const taxRate = 0.10;
   const tax = subtotal * taxRate;
