@@ -5,7 +5,6 @@ import Header from "@/components/layout/header";
 import ShoppingCart from "@/components/layout/shopping-cart";
 import RestaurantCard from "@/components/restaurant-card";
 import LunchboxCard from "@/components/lunchbox-card";
-import { CartProvider } from "@/hooks/use-cart";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -65,9 +64,8 @@ export default function HomePage() {
   ) || [];
 
   return (
-    <CartProvider>
-      <div className="min-h-screen bg-background">
-        <Header />
+    <div className="min-h-screen bg-background">
+      <Header />
         
         {/* Hero Section */}
         <section className="gradient-hero py-16">
@@ -288,6 +286,5 @@ export default function HomePage() {
           </div>
         </main>
       </div>
-    </CartProvider>
   );
 }
