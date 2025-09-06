@@ -109,6 +109,7 @@ export default function Checkout() {
       tax: tax.toFixed(2),
       total: total.toFixed(2),
       deliveryLocation: selectedLocation,
+      deliveryDay: selectedDeliveryDay,
       items: firstRestaurantItems.map(item => ({
         lunchboxId: item.lunchbox.id,
         quantity: item.quantity,

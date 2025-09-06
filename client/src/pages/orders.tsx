@@ -83,7 +83,7 @@ export default function Orders() {
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center space-x-2">
                         <Receipt className="w-5 h-5" />
-                        <span>Order #{order.id.slice(0, 8)}</span>
+                        <span>Order #{(order as any).orderNumber || order.id.slice(0, 8)}</span>
                       </CardTitle>
                       <Badge 
                         className={`flex items-center space-x-1 ${getStatusColor(order.status)}`}
@@ -104,7 +104,7 @@ export default function Orders() {
                           <div>
                             <h4 className="font-medium text-foreground mb-1">Restaurant</h4>
                             <p className="text-muted-foreground" data-testid={`order-restaurant-${order.id}`}>
-                              {order.restaurantId}
+                              {(order as any).restaurant?.name || order.restaurantId}
                             </p>
                           </div>
                         )}
@@ -116,14 +116,40 @@ export default function Orders() {
                         </div>
                       </div>
                       
-                      {order.deliveryLocation && (
+                      <Separator />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <h4 className="font-medium text-foreground mb-1">Delivery Location</h4>
+                          <p className="text-muted-foreground" data-testid={`order-address-${order.id}`}>
+                            {order.deliveryLocation}
+                          </p>
+                        </div>
+                        {(order as any).deliveryDay && (
+                          <div>
+                            <h4 className="font-medium text-foreground mb-1">Delivery Day</h4>
+                            <p className="text-muted-foreground capitalize" data-testid={`order-delivery-day-${order.id}`}>
+                              {(order as any).deliveryDay}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                      
+                      {(order as any).items && (order as any).items.length > 0 && (
                         <>
                           <Separator />
                           <div>
-                            <h4 className="font-medium text-foreground mb-1">Delivery Location</h4>
-                            <p className="text-muted-foreground" data-testid={`order-address-${order.id}`}>
-                              {order.deliveryLocation}
-                            </p>
+                            <h4 className="font-medium text-foreground mb-2">Items Ordered</h4>
+                            <div className="space-y-2">
+                              {(order as any).items.map((item: any) => (
+                                <div key={item.id} className="flex justify-between items-center p-2 bg-muted rounded-lg">
+                                  <div>
+                                    <span className="font-medium">{item.lunchbox?.name || 'Item'}</span>
+                                    <span className="text-muted-foreground ml-2">×{item.quantity}</span>
+                                  </div>
+                                  <span className="font-medium">${parseFloat(item.price).toFixed(2)}</span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         </>
                       )}

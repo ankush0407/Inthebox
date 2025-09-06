@@ -256,7 +256,33 @@ export async function registerRoutes(app: Express): Promise<Server> {
         // Admin can see all orders - implement if needed
         orders = [];
       }
-      res.json(orders);
+
+      // Enhance orders with restaurant info and items
+      const enhancedOrders = await Promise.all(
+        orders.map(async (order) => {
+          const restaurant = order.restaurantId ? await storage.getRestaurant(order.restaurantId) : null;
+          const orderItems = await storage.getOrderItems(order.id);
+          
+          // Get lunchbox details for each order item
+          const itemsWithDetails = await Promise.all(
+            orderItems.map(async (item) => {
+              const lunchbox = item.lunchboxId ? await storage.getLunchbox(item.lunchboxId) : null;
+              return {
+                ...item,
+                lunchbox: lunchbox || null
+              };
+            })
+          );
+
+          return {
+            ...order,
+            restaurant: restaurant || null,
+            items: itemsWithDetails
+          };
+        })
+      );
+
+      res.json(enhancedOrders);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching orders: " + error.message });
     }

@@ -53,6 +53,7 @@ export const lunchboxes = pgTable("lunchboxes", {
 
 export const orders = pgTable("orders", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  orderNumber: serial("order_number").unique(),
   customerId: varchar("customer_id").references(() => users.id),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
   status: orderStatusEnum("status").notNull().default("pending"),
@@ -62,7 +63,7 @@ export const orders = pgTable("orders", {
   tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   deliveryLocation: text("delivery_location").notNull(),
-  deliveryDay: text("delivery_day"),
+  deliveryDay: text("delivery_day").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
