@@ -293,6 +293,7 @@ export default function HomePage() {
                               key={lunchbox.id} 
                               lunchbox={lunchbox} 
                               restaurantName={selectedRestaurant.name}
+                              restaurantDeliveryFee={parseFloat(selectedRestaurant.deliveryFee)}
                             />
                           ))
                         ) : (

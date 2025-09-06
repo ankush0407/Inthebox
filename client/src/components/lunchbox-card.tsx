@@ -8,9 +8,10 @@ import { Utensils, Plus, Calendar } from "lucide-react";
 interface LunchboxCardProps {
   lunchbox: Lunchbox;
   restaurantName: string;
+  restaurantDeliveryFee: number;
 }
 
-export default function LunchboxCard({ lunchbox, restaurantName }: LunchboxCardProps) {
+export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliveryFee }: LunchboxCardProps) {
   const { addItem } = useCart();
   const { toast } = useToast();
 
@@ -24,7 +25,7 @@ export default function LunchboxCard({ lunchbox, restaurantName }: LunchboxCardP
       return;
     }
 
-    addItem(lunchbox, restaurantName);
+    addItem(lunchbox, restaurantName, restaurantDeliveryFee);
     toast({
       title: "Added to Cart",
       description: `${lunchbox.name} has been added to your cart.`,
