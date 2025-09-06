@@ -122,13 +122,14 @@ export default function HomePage() {
       <Header />
         
         {/* Hero Section */}
-        <section className="gradient-hero py-16">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-white mb-4">
+        <section className="gradient-hero py-16 relative">
+          <div className="absolute inset-0 bg-gradient-to-r from-black/20 to-black/10"></div>
+          <div className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+            <h1 className="text-4xl md:text-6xl font-bold text-white drop-shadow-lg mb-4">
               Fresh Lunchboxes<br />
-              <span className="text-white/90">Delivered to Your Office</span>
+              <span className="text-white/95 drop-shadow-lg">Delivered to Your Office</span>
             </h1>
-            <p className="text-xl text-white/80 mb-8 max-w-2xl mx-auto">
+            <p className="text-xl text-white drop-shadow-md mb-8 max-w-2xl mx-auto">
               Order from premium local restaurants and get your favorite meals delivered directly to Amazon buildings
             </p>
             
