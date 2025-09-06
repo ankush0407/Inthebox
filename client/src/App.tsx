@@ -14,6 +14,7 @@ import UserProfile from "@/pages/user-profile";
 import Orders from "@/pages/orders";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
 import RestaurantProfile from "@/pages/restaurant-profile";
+import RestaurantOrders from "@/pages/restaurant-orders";
 import AdminPanel from "@/pages/admin-panel";
 import Checkout from "@/pages/checkout";
 import NotFound from "@/pages/not-found";
@@ -26,6 +27,7 @@ function Router() {
       <ProtectedRoute path="/restaurant-profile" component={RestaurantProfile} />
       <ProtectedRoute path="/orders" component={Orders} />
       <ProtectedRoute path="/restaurant-dashboard" component={RestaurantDashboard} />
+      <ProtectedRoute path="/restaurant-orders" component={RestaurantOrders} />
       <ProtectedRoute path="/admin-panel" component={AdminPanel} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <Route path="/auth" component={AuthPage} />

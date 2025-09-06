@@ -51,14 +51,24 @@ export default function Header() {
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
             {user?.role === "restaurant_owner" && (
-              <Button 
-                variant="ghost" 
-                className="text-muted-foreground hover:text-primary"
-                onClick={() => setLocation("/restaurant-dashboard")}
-                data-testid="nav-dashboard"
-              >
-                Dashboard
-              </Button>
+              <>
+                <Button 
+                  variant="ghost" 
+                  className="text-muted-foreground hover:text-primary"
+                  onClick={() => setLocation("/restaurant-dashboard")}
+                  data-testid="nav-dashboard"
+                >
+                  Dashboard
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  className="text-muted-foreground hover:text-primary"
+                  onClick={() => setLocation("/restaurant-orders")}
+                  data-testid="nav-orders"
+                >
+                  Orders
+                </Button>
+              </>
             )}
             {user?.role === "admin" && (
               <Button 

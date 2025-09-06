@@ -257,10 +257,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orders = [];
       }
 
-      // Enhance orders with restaurant info and items
+      // Enhance orders with restaurant info, customer info and items
       const enhancedOrders = await Promise.all(
         orders.map(async (order) => {
           const restaurant = order.restaurantId ? await storage.getRestaurant(order.restaurantId) : null;
+          const customer = order.customerId ? await storage.getUser(order.customerId) : null;
           const orderItems = await storage.getOrderItems(order.id);
           
           // Get lunchbox details for each order item
@@ -277,6 +278,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           return {
             ...order,
             restaurant: restaurant || null,
+            customer: customer || null,
             items: itemsWithDetails
           };
         })
@@ -314,6 +316,50 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(items);
     } catch (error: any) {
       res.status(500).json({ message: "Error fetching order items: " + error.message });
+    }
+  });
+
+  // Bulk update order status
+  app.patch("/api/orders/bulk-status", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    if (req.user.role !== "restaurant_owner") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const { orderIds, status } = req.body;
+      
+      if (!orderIds || !Array.isArray(orderIds) || !status) {
+        return res.status(400).json({ message: "orderIds array and status are required" });
+      }
+
+      const restaurant = await storage.getRestaurantByOwnerId(req.user.id);
+      if (!restaurant) {
+        return res.sendStatus(403);
+      }
+
+      // Verify all orders belong to this restaurant
+      const orders = await Promise.all(
+        orderIds.map(async (orderId: string) => {
+          const order = await storage.getOrder(orderId);
+          if (!order || order.restaurantId !== restaurant.id) {
+            throw new Error(`Order ${orderId} not found or unauthorized`);
+          }
+          return order;
+        })
+      );
+
+      // Update all orders
+      await Promise.all(
+        orderIds.map((orderId: string) => storage.updateOrderStatus(orderId, status))
+      );
+
+      res.json({ message: `Updated ${orderIds.length} orders to ${status}` });
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating orders: " + error.message });
     }
   });
 
