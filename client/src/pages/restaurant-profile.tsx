@@ -332,7 +332,11 @@ export default function RestaurantProfile() {
                         onComplete={(result) => {
                           if (result.successful && result.successful.length > 0) {
                             const uploadedFile = result.successful[0];
-                            const imageUrl = uploadedFile.uploadURL?.split('?')[0] || "";
+                            const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
+                            // Convert to local serving path
+                            const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
+                              ? `/objects/${rawUrl.split('/').slice(-2).join('/')}` 
+                              : rawUrl;
                             setLogoUrl(imageUrl);
                             form.setValue("imageUrl", imageUrl);
                             toast({

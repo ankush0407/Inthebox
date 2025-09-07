@@ -16,7 +16,8 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut, Calendar, BarChart3, Settings, ClipboardList } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut, Calendar, BarChart3, Settings, ClipboardList, Upload, ImageIcon } from "lucide-react";
+import { ObjectUploader } from "@/components/ObjectUploader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -30,6 +31,7 @@ export default function RestaurantDashboard() {
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingLunchbox, setEditingLunchbox] = useState<Lunchbox | null>(null);
+  const [lunchboxImageUrl, setLunchboxImageUrl] = useState("");
 
   // Redirect non-restaurant owners
   if (user && user.role !== "restaurant_owner" && user.role !== "admin") {
@@ -74,6 +76,7 @@ export default function RestaurantDashboard() {
       queryClient.invalidateQueries({ queryKey: ["/api/restaurants", restaurant?.id, "lunchboxes"] });
       setIsAddDialogOpen(false);
       form.reset();
+      setLunchboxImageUrl("");
       toast({
         title: "Success",
         description: "Lunchbox added successfully",
@@ -98,6 +101,7 @@ export default function RestaurantDashboard() {
       setIsEditDialogOpen(false);
       setEditingLunchbox(null);
       form.reset();
+      setLunchboxImageUrl("");
       toast({
         title: "Success",
         description: "Lunchbox updated successfully",
@@ -162,14 +166,16 @@ export default function RestaurantDashboard() {
 
   const handleEditLunchbox = (lunchbox: Lunchbox) => {
     setEditingLunchbox(lunchbox);
+    const imageUrl = lunchbox.imageUrl || "";
+    setLunchboxImageUrl(imageUrl);
     form.reset({
       name: lunchbox.name,
       description: lunchbox.description,
       price: lunchbox.price,
-      imageUrl: lunchbox.imageUrl || "",
+      imageUrl: imageUrl,
       isAvailable: lunchbox.isAvailable ?? true,
       dietaryTags: lunchbox.dietaryTags || [],
-      availableDays: lunchbox.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      availableDays: (lunchbox.availableDays as string[]) || ["monday", "tuesday", "wednesday", "thursday", "friday"],
     });
     setIsEditDialogOpen(true);
   };
@@ -410,19 +416,55 @@ export default function RestaurantDashboard() {
                               </FormItem>
                             )}
                           />
-                          <FormField
-                            control={form.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Image URL (optional)</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-lunchbox-image" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
+                          <div className="space-y-4">
+                            <div>
+                              <label className="flex items-center space-x-2 mb-2 text-sm font-medium">
+                                <ImageIcon className="w-4 h-4" />
+                                <span>Lunchbox Image (optional)</span>
+                              </label>
+                              
+                              {lunchboxImageUrl && (
+                                <div className="mb-4">
+                                  <img 
+                                    src={lunchboxImageUrl} 
+                                    alt="Lunchbox preview" 
+                                    className="w-32 h-32 object-cover rounded-lg border"
+                                    data-testid="img-lunchbox-preview"
+                                  />
+                                </div>
+                              )}
+                              
+                              <ObjectUploader
+                                maxNumberOfFiles={1}
+                                maxFileSize={5242880}
+                                onGetUploadParameters={async () => {
+                                  const res = await apiRequest("POST", "/api/objects/upload");
+                                  const data = await res.json();
+                                  return { method: "PUT" as const, url: data.uploadURL };
+                                }}
+                                onComplete={(result) => {
+                                  if (result.successful && result.successful.length > 0) {
+                                    const uploadedFile = result.successful[0];
+                                    const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
+                                    // Convert to local serving path
+                                    const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
+                                      ? `/objects/${rawUrl.split('/').slice(-2).join('/')}` 
+                                      : rawUrl;
+                                    setLunchboxImageUrl(imageUrl);
+                                    form.setValue("imageUrl", imageUrl);
+                                    toast({
+                                      title: "Image uploaded successfully",
+                                      description: "Your lunchbox image has been updated.",
+                                    });
+                                  }
+                                }}
+                                buttonClassName="w-full"
+                              >
+                                <Upload className="mr-2 h-4 w-4" />
+                                {lunchboxImageUrl ? "Change Image" : "Upload Image"}
+                              </ObjectUploader>
+                            </div>
+                          </div>
                           <FormField
                             control={form.control}
                             name="isAvailable"
@@ -442,7 +484,11 @@ export default function RestaurantDashboard() {
                             )}
                           />
                           <div className="flex justify-end space-x-2">
-                            <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                            <Button type="button" variant="outline" onClick={() => {
+                              setIsAddDialogOpen(false);
+                              setLunchboxImageUrl("");
+                              form.reset();
+                            }}>
                               Cancel
                             </Button>
                             <Button type="submit" disabled={addLunchboxMutation.isPending}>
@@ -636,19 +682,54 @@ export default function RestaurantDashboard() {
                     </FormItem>
                   )}
                 />
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Image URL (optional)</FormLabel>
-                      <FormControl>
-                        <Input placeholder="https://example.com/image.jpg" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
+                <div className="space-y-4">
+                  <div>
+                    <label className="flex items-center space-x-2 mb-2 text-sm font-medium">
+                      <ImageIcon className="w-4 h-4" />
+                      <span>Lunchbox Image (optional)</span>
+                    </label>
+                    
+                    {lunchboxImageUrl && (
+                      <div className="mb-4">
+                        <img 
+                          src={lunchboxImageUrl} 
+                          alt="Lunchbox preview" 
+                          className="w-32 h-32 object-cover rounded-lg border"
+                        />
+                      </div>
+                    )}
+                    
+                    <ObjectUploader
+                      maxNumberOfFiles={1}
+                      maxFileSize={5242880}
+                      onGetUploadParameters={async () => {
+                        const res = await apiRequest("POST", "/api/objects/upload");
+                        const data = await res.json();
+                        return { method: "PUT" as const, url: data.uploadURL };
+                      }}
+                      onComplete={(result) => {
+                        if (result.successful && result.successful.length > 0) {
+                          const uploadedFile = result.successful[0];
+                          const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
+                          // Convert to local serving path
+                          const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
+                            ? `/objects/${rawUrl.split('/').slice(-2).join('/')}` 
+                            : rawUrl;
+                          setLunchboxImageUrl(imageUrl);
+                          form.setValue("imageUrl", imageUrl);
+                          toast({
+                            title: "Image uploaded successfully",
+                            description: "Your lunchbox image has been updated.",
+                          });
+                        }
+                      }}
+                      buttonClassName="w-full"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {lunchboxImageUrl ? "Change Image" : "Upload Image"}
+                    </ObjectUploader>
+                  </div>
+                </div>
                 <FormField
                   control={form.control}
                   name="isAvailable"
@@ -667,7 +748,11 @@ export default function RestaurantDashboard() {
                   )}
                 />
                 <div className="flex justify-end space-x-2">
-                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                  <Button type="button" variant="outline" onClick={() => {
+                    setIsEditDialogOpen(false);
+                    setLunchboxImageUrl("");
+                    form.reset();
+                  }}>
                     Cancel
                   </Button>
                   <Button type="submit" disabled={updateLunchboxMutation.isPending}>
