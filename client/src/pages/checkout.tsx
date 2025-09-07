@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useLocationContext } from "@/contexts/location-context";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
@@ -6,7 +6,6 @@ import { useLocation } from "wouter";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Separator } from "@/components/ui/separator";
@@ -15,7 +14,99 @@ import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
 import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock, User } from "lucide-react";
+import { loadStripe } from '@stripe/stripe-js';
+import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
 
+// Initialize Stripe
+if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
+  throw new Error('Missing required Stripe key: VITE_STRIPE_PUBLIC_KEY');
+}
+const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
+
+// Payment Form Component
+const PaymentForm = ({ onOrderSuccess, orderData, total }: { 
+  onOrderSuccess: () => void; 
+  orderData: any; 
+  total: number;
+}) => {
+  const stripe = useStripe();
+  const elements = useElements();
+  const { toast } = useToast();
+  const [isProcessing, setIsProcessing] = useState(false);
+
+  const createOrderMutation = useMutation({
+    mutationFn: async (orderData: any) => {
+      const res = await apiRequest("POST", "/api/orders", orderData);
+      return res.json();
+    },
+    onSuccess: onOrderSuccess,
+    onError: (error: Error) => {
+      toast({
+        title: "Order Failed",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!stripe || !elements) {
+      return;
+    }
+
+    setIsProcessing(true);
+
+    try {
+      // Confirm the payment
+      const { error } = await stripe.confirmPayment({
+        elements,
+        confirmParams: {
+          return_url: `${window.location.origin}/orders`,
+        },
+        redirect: 'if_required',
+      });
+
+      if (error) {
+        toast({
+          title: "Payment Failed",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        // Payment succeeded, create the order
+        createOrderMutation.mutate(orderData);
+      }
+    } catch (error: any) {
+      toast({
+        title: "Payment Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <PaymentElement />
+      <Button 
+        type="submit"
+        className="w-full mt-6" 
+        size="lg"
+        disabled={!stripe || !elements || isProcessing || createOrderMutation.isPending}
+        data-testid="button-pay-now"
+      >
+        {isProcessing || createOrderMutation.isPending 
+          ? "Processing Payment..." 
+          : `Pay $${total.toFixed(2)}`
+        }
+      </Button>
+    </form>
+  );
+};
 
 export default function Checkout() {
   const [, setLocation] = useLocation();
@@ -25,6 +116,7 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const { selectedLocation } = useLocationContext();
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("");
+  const [clientSecret, setClientSecret] = useState("");
 
   // Redirect if cart is empty
   if (items.length === 0) {
@@ -115,43 +207,38 @@ export default function Checkout() {
   const tax = subtotal * taxRate;
   const total = subtotal + deliveryFee + serviceFee + tax;
 
-  const createOrderMutation = useMutation({
-    mutationFn: async (orderData: any) => {
-      const res = await apiRequest("POST", "/api/orders", orderData);
-      return res.json();
-    },
-    onSuccess: () => {
-      clearCart();
-      toast({
-        title: "Order Placed Successfully!",
-        description: "Your lunchbox order has been confirmed and is being prepared.",
-      });
-      setLocation("/");
-    },
-    onError: (error: Error) => {
-      toast({
-        title: "Order Failed",
-        description: error.message,
-        variant: "destructive",
-      });
-    },
-  });
-
-  const handlePlaceOrder = async () => {
-    if (isMultiRestaurant) {
-      toast({
-        title: "Multiple Restaurants",
-        description: "Please place separate orders for each restaurant.",
-        variant: "destructive",
-      });
-      return;
+  // Create payment intent when component mounts
+  useEffect(() => {
+    if (total > 0) {
+      apiRequest("POST", "/api/create-payment-intent", { amount: total })
+        .then((res) => res.json())
+        .then((data) => {
+          setClientSecret(data.clientSecret);
+        })
+        .catch((error) => {
+          toast({
+            title: "Payment Setup Failed",
+            description: "Unable to initialize payment. Please try again.",
+            variant: "destructive",
+          });
+        });
     }
+  }, [total, toast]);
 
-    // For now, we'll create a single order for the first restaurant
+  const handleOrderSuccess = () => {
+    clearCart();
+    toast({
+      title: "Order Placed Successfully!",
+      description: "Your lunchbox order has been confirmed and is being prepared.",
+    });
+    setLocation("/orders");
+  };
+
+  const getOrderData = () => {
     const firstRestaurantItems = Object.values(itemsByRestaurant)[0];
     const restaurantId = firstRestaurantItems[0].lunchbox.restaurantId;
 
-    const orderData = {
+    return {
       restaurantId,
       subtotal: subtotal.toFixed(2),
       deliveryFee: deliveryFee.toFixed(2),
@@ -166,9 +253,15 @@ export default function Checkout() {
         price: item.lunchbox.price,
       })),
     };
-
-    createOrderMutation.mutate(orderData);
   };
+
+  if (!clientSecret) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" aria-label="Loading"/>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -246,23 +339,28 @@ export default function Checkout() {
               <CardHeader>
                 <CardTitle className="flex items-center space-x-2">
                   <CreditCard className="w-5 h-5" />
-                  <span>Payment Method</span>
+                  <span>Payment Information</span>
                 </CardTitle>
+                <CardDescription>
+                  Enter your payment details to complete the order
+                </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="space-y-4">
-                  <div className="p-4 border border-border rounded-lg bg-accent/10">
-                    <div className="text-center">
-                      <h4 className="font-medium text-accent mb-2">Pay on Delivery</h4>
-                      <p className="text-sm text-muted-foreground">
-                        Payment will be collected when your order is delivered to your location.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-2">
-                        Cash, card, or digital payment accepted at delivery
-                      </p>
-                    </div>
+                {isMultiRestaurant ? (
+                  <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+                    <p className="text-sm text-yellow-800">
+                      ⚠️ You have items from multiple restaurants. Please place separate orders for each restaurant.
+                    </p>
                   </div>
-                </div>
+                ) : (
+                  <Elements stripe={stripePromise} options={{ clientSecret }}>
+                    <PaymentForm 
+                      onOrderSuccess={handleOrderSuccess}
+                      orderData={getOrderData()}
+                      total={total}
+                    />
+                  </Elements>
+                )}
               </CardContent>
             </Card>
           </div>
@@ -276,14 +374,6 @@ export default function Checkout() {
                 <CardDescription>Review your items before placing the order</CardDescription>
               </CardHeader>
               <CardContent>
-                {isMultiRestaurant && (
-                  <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
-                    <p className="text-sm text-yellow-800">
-                      ⚠️ You have items from multiple restaurants. Please place separate orders for each restaurant.
-                    </p>
-                  </div>
-                )}
-
                 <div className="space-y-4">
                   {Object.entries(itemsByRestaurant).map(([restaurantName, restaurantItems]) => (
                     <div key={restaurantName}>
@@ -345,27 +435,6 @@ export default function Checkout() {
                     <span>Total</span>
                     <span className="text-primary" data-testid="checkout-total">${total.toFixed(2)}</span>
                   </div>
-                </div>
-
-                <Button 
-                  className="w-full mt-6" 
-                  size="lg"
-                  onClick={handlePlaceOrder}
-                  disabled={createOrderMutation.isPending || isMultiRestaurant}
-                  data-testid="button-place-order"
-                >
-                  {createOrderMutation.isPending ? "Placing Order..." : "Place Order"}
-                </Button>
-
-                {/* Payment Note */}
-                <div className="mt-4 text-center">
-                  <p className="text-xs text-muted-foreground mb-2">Payment on Delivery</p>
-                  <div className="flex justify-center space-x-2 text-lg">
-                    <span>💵</span>
-                    <span>💳</span>
-                    <span>📱</span>
-                  </div>
-                  <p className="text-xs text-muted-foreground mt-1">Cash, Card, or Digital Payment</p>
                 </div>
               </CardContent>
             </Card>
