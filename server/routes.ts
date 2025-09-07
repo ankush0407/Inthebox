@@ -30,6 +30,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
+  // Public upload endpoint for restaurant logos and menu images
+  app.post("/api/objects/upload-public", async (req, res) => {
+    if (!req.isAuthenticated()) {
+      return res.sendStatus(401);
+    }
+
+    try {
+      const objectStorageService = new ObjectStorageService();
+      const uploadURL = await objectStorageService.getPublicUploadURL();
+      res.json({ uploadURL });
+    } catch (error: any) {
+      res.status(500).json({ error: "Failed to get public upload URL" });
+    }
+  });
+
   // Serve public objects
   app.get("/public-objects/:filePath(*)", async (req, res) => {
     const filePath = req.params.filePath;

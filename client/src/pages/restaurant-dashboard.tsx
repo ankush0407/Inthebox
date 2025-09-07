@@ -438,7 +438,7 @@ export default function RestaurantDashboard() {
                                 maxNumberOfFiles={1}
                                 maxFileSize={5242880}
                                 onGetUploadParameters={async () => {
-                                  const res = await apiRequest("POST", "/api/objects/upload");
+                                  const res = await apiRequest("POST", "/api/objects/upload-public");
                                   const data = await res.json();
                                   return { method: "PUT" as const, url: data.uploadURL };
                                 }}
@@ -448,7 +448,7 @@ export default function RestaurantDashboard() {
                                     const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
                                     // Convert to local serving path
                                     const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
-                                      ? `/objects/${rawUrl.split('/').slice(-2).join('/')}` 
+                                      ? `/public-objects/${rawUrl.split('/').slice(-1)[0]}` 
                                       : rawUrl;
                                     setLunchboxImageUrl(imageUrl);
                                     form.setValue("imageUrl", imageUrl);
@@ -703,7 +703,7 @@ export default function RestaurantDashboard() {
                       maxNumberOfFiles={1}
                       maxFileSize={5242880}
                       onGetUploadParameters={async () => {
-                        const res = await apiRequest("POST", "/api/objects/upload");
+                        const res = await apiRequest("POST", "/api/objects/upload-public");
                         const data = await res.json();
                         return { method: "PUT" as const, url: data.uploadURL };
                       }}
@@ -713,7 +713,7 @@ export default function RestaurantDashboard() {
                           const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
                           // Convert to local serving path
                           const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
-                            ? `/objects/${rawUrl.split('/').slice(-2).join('/')}` 
+                            ? `/public-objects/${rawUrl.split('/').slice(-1)[0]}` 
                             : rawUrl;
                           setLunchboxImageUrl(imageUrl);
                           form.setValue("imageUrl", imageUrl);

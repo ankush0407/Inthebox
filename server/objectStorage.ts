@@ -143,6 +143,29 @@ export class ObjectStorageService {
     });
   }
 
+  // Gets the upload URL for a public object (like restaurant logos, menu images).
+  async getPublicUploadURL(): Promise<string> {
+    const publicSearchPaths = this.getPublicObjectSearchPaths();
+    if (publicSearchPaths.length === 0) {
+      throw new Error("No public search paths configured");
+    }
+
+    // Use the first public search path
+    const publicPath = publicSearchPaths[0];
+    const objectId = randomUUID();
+    const fullPath = `${publicPath}/${objectId}`;
+
+    const { bucketName, objectName } = parseObjectPath(fullPath);
+
+    // Sign URL for PUT method with TTL
+    return signObjectURL({
+      bucketName,
+      objectName,
+      method: "PUT",
+      ttlSec: 900,
+    });
+  }
+
   normalizeObjectEntityPath(
     rawPath: string,
   ): string {
