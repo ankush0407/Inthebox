@@ -11,11 +11,12 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from "
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut, Calendar } from "lucide-react";
+import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils, LogOut, Calendar, BarChart3, Settings, ClipboardList } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -133,14 +134,13 @@ export default function RestaurantDashboard() {
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      const res = await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
-      return res.json();
+      await apiRequest("PATCH", `/api/orders/${orderId}/status`, { status });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
       toast({
         title: "Success",
-        description: "Order status updated",
+        description: "Order status updated successfully",
       });
     },
     onError: (error: Error) => {
@@ -152,7 +152,7 @@ export default function RestaurantDashboard() {
     },
   });
 
-  const onSubmit = (data: any) => {
+  const onSubmit = async (data: any) => {
     if (editingLunchbox) {
       updateLunchboxMutation.mutate(data);
     } else {
@@ -165,10 +165,10 @@ export default function RestaurantDashboard() {
     form.reset({
       name: lunchbox.name,
       description: lunchbox.description,
-      price: lunchbox.price.toString(),
+      price: lunchbox.price,
       imageUrl: lunchbox.imageUrl || "",
       isAvailable: lunchbox.isAvailable ?? true,
-      dietaryTags: (lunchbox.dietaryTags || []) as string[],
+      dietaryTags: lunchbox.dietaryTags || [],
       availableDays: lunchbox.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
     });
     setIsEditDialogOpen(true);
@@ -238,57 +238,116 @@ export default function RestaurantDashboard() {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Quick Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Today's Orders</p>
-                  <p className="text-2xl font-bold text-primary" data-testid="stat-today-orders">{todayOrders}</p>
-                </div>
-                <ShoppingBag className="w-8 h-8 text-primary" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Revenue</p>
-                  <p className="text-2xl font-bold text-accent" data-testid="stat-revenue">${todayRevenue.toFixed(2)}</p>
-                </div>
-                <DollarSign className="w-8 h-8 text-accent" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Avg Rating</p>
-                  <p className="text-2xl font-bold text-yellow-500" data-testid="stat-rating">{avgRating}</p>
-                </div>
-                <Star className="w-8 h-8 text-yellow-500" />
-              </div>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-muted-foreground">Active Items</p>
-                  <p className="text-2xl font-bold text-foreground" data-testid="stat-active-items">{activeItems}</p>
-                </div>
-                <Utensils className="w-8 h-8 text-secondary" />
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+        <Tabs defaultValue="dashboard" className="w-full">
+          <TabsList className="grid w-full grid-cols-4 mb-8">
+            <TabsTrigger value="dashboard" className="flex items-center space-x-2">
+              <BarChart3 className="w-4 h-4" />
+              <span className="hidden sm:inline">Dashboard</span>
+            </TabsTrigger>
+            <TabsTrigger value="menu" className="flex items-center space-x-2">
+              <Utensils className="w-4 h-4" />
+              <span className="hidden sm:inline">Menu</span>
+            </TabsTrigger>
+            <TabsTrigger value="orders" className="flex items-center space-x-2">
+              <ClipboardList className="w-4 h-4" />
+              <span className="hidden sm:inline">Orders</span>
+            </TabsTrigger>
+            <TabsTrigger value="profile" className="flex items-center space-x-2">
+              <Settings className="w-4 h-4" />
+              <span className="hidden sm:inline">Profile</span>
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* Menu Management */}
-          <div className="lg:col-span-2">
+          <TabsContent value="dashboard" className="mt-0">
+            {/* Quick Stats */}
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Today's Orders</p>
+                      <p className="text-2xl font-bold text-primary" data-testid="stat-today-orders">{todayOrders}</p>
+                    </div>
+                    <ShoppingBag className="w-8 h-8 text-primary" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Revenue</p>
+                      <p className="text-2xl font-bold text-accent" data-testid="stat-revenue">${todayRevenue.toFixed(2)}</p>
+                    </div>
+                    <DollarSign className="w-8 h-8 text-accent" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Avg Rating</p>
+                      <p className="text-2xl font-bold text-yellow-500" data-testid="stat-rating">{avgRating}</p>
+                    </div>
+                    <Star className="w-8 h-8 text-yellow-500" />
+                  </div>
+                </CardContent>
+              </Card>
+              <Card>
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Active Items</p>
+                      <p className="text-2xl font-bold text-foreground" data-testid="stat-active-items">{activeItems}</p>
+                    </div>
+                    <Utensils className="w-8 h-8 text-secondary" />
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Recent Orders Summary */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Recent Orders</CardTitle>
+                <CardDescription>Latest orders for your restaurant</CardDescription>
+              </CardHeader>
+              <CardContent>
+                {ordersLoading ? (
+                  <div className="space-y-3">
+                    {[...Array(3)].map((_, i) => (
+                      <Skeleton key={i} className="h-12 w-full" />
+                    ))}
+                  </div>
+                ) : !orders || orders.length === 0 ? (
+                  <div className="text-center py-8">
+                    <ShoppingBag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <p className="text-muted-foreground">No orders yet</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {orders.slice(0, 5).map((order) => (
+                      <div key={order.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div>
+                          <p className="font-medium">Order #{order.orderNumber || order.id.slice(0, 8)}</p>
+                          <p className="text-sm text-muted-foreground">{order.deliveryLocation}</p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-medium">${order.total}</p>
+                          <Badge variant={order.status === 'pending' ? 'secondary' : 'default'}>
+                            {order.status}
+                          </Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          <TabsContent value="menu" className="mt-0">
             <Card>
               <CardHeader>
                 <div className="flex items-center justify-between">
@@ -366,156 +425,28 @@ export default function RestaurantDashboard() {
                           />
                           <FormField
                             control={form.control}
-                            name="availableDays"
+                            name="isAvailable"
                             render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center space-x-2">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>Available Days</span>
-                                </FormLabel>
-                                <div className="grid grid-cols-3 gap-3">
-                                  {["monday", "tuesday", "wednesday", "thursday", "friday"].map((day) => (
-                                    <div key={day} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={day}
-                                        checked={field.value?.includes(day)}
-                                        onCheckedChange={(checked) => {
-                                          const updatedDays = checked
-                                            ? [...(field.value || []), day]
-                                            : field.value?.filter((d: string) => d !== day) || [];
-                                          field.onChange(updatedDays);
-                                        }}
-                                        data-testid={`checkbox-day-${day}`}
-                                      />
-                                      <label htmlFor={day} className="text-sm font-medium capitalize cursor-pointer">
-                                        {day.slice(0, 3)}
-                                      </label>
-                                    </div>
-                                  ))}
+                              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                                <FormControl>
+                                  <Checkbox
+                                    checked={field.value}
+                                    onCheckedChange={field.onChange}
+                                    data-testid="checkbox-lunchbox-available"
+                                  />
+                                </FormControl>
+                                <div className="space-y-1 leading-none">
+                                  <FormLabel>Available for ordering</FormLabel>
                                 </div>
-                                <FormMessage />
                               </FormItem>
                             )}
                           />
-                          <div className="flex space-x-2">
-                            <Button type="submit" disabled={addLunchboxMutation.isPending} data-testid="button-submit-lunchbox">
-                              Add Lunchbox
-                            </Button>
+                          <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => setIsAddDialogOpen(false)}>
                               Cancel
                             </Button>
-                          </div>
-                        </form>
-                      </Form>
-                    </DialogContent>
-                  </Dialog>
-
-                  {/* Edit Dialog */}
-                  <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-                    <DialogContent className="max-h-[85vh] overflow-y-auto">
-                      <DialogHeader>
-                        <DialogTitle>Edit Lunchbox</DialogTitle>
-                        <DialogDescription>
-                          Update your lunchbox details
-                        </DialogDescription>
-                      </DialogHeader>
-                      <Form {...form}>
-                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-                          <FormField
-                            control={form.control}
-                            name="name"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Name</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="Lunchbox name" {...field} data-testid="input-edit-lunchbox-name" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="description"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Description</FormLabel>
-                                <FormControl>
-                                  <Textarea placeholder="Describe the lunchbox contents" {...field} data-testid="textarea-edit-lunchbox-description" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="price"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Price</FormLabel>
-                                <FormControl>
-                                  <Input type="number" step="0.01" placeholder="19.99" {...field} data-testid="input-edit-lunchbox-price" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="imageUrl"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel>Image URL (optional)</FormLabel>
-                                <FormControl>
-                                  <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-edit-lunchbox-image" />
-                                </FormControl>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <FormField
-                            control={form.control}
-                            name="availableDays"
-                            render={({ field }) => (
-                              <FormItem>
-                                <FormLabel className="flex items-center space-x-2">
-                                  <Calendar className="w-4 h-4" />
-                                  <span>Available Days</span>
-                                </FormLabel>
-                                <div className="grid grid-cols-3 gap-3">
-                                  {["monday", "tuesday", "wednesday", "thursday", "friday"].map((day) => (
-                                    <div key={day} className="flex items-center space-x-2">
-                                      <Checkbox
-                                        id={`edit-${day}`}
-                                        checked={field.value?.includes(day)}
-                                        onCheckedChange={(checked) => {
-                                          const updatedDays = checked
-                                            ? [...(field.value || []), day]
-                                            : field.value?.filter((d: string) => d !== day) || [];
-                                          field.onChange(updatedDays);
-                                        }}
-                                        data-testid={`checkbox-edit-day-${day}`}
-                                      />
-                                      <label htmlFor={`edit-${day}`} className="text-sm font-medium capitalize cursor-pointer">
-                                        {day.slice(0, 3)}
-                                      </label>
-                                    </div>
-                                  ))}
-                                </div>
-                                <FormMessage />
-                              </FormItem>
-                            )}
-                          />
-                          <div className="flex space-x-2">
-                            <Button type="submit" disabled={updateLunchboxMutation.isPending} data-testid="button-update-lunchbox">
-                              {updateLunchboxMutation.isPending ? "Updating..." : "Update Lunchbox"}
-                            </Button>
-                            <Button type="button" variant="outline" onClick={() => {
-                              setIsEditDialogOpen(false);
-                              setEditingLunchbox(null);
-                              form.reset();
-                            }}>
-                              Cancel
+                            <Button type="submit" disabled={addLunchboxMutation.isPending}>
+                              {addLunchboxMutation.isPending ? "Adding..." : "Add Lunchbox"}
                             </Button>
                           </div>
                         </form>
@@ -528,58 +459,65 @@ export default function RestaurantDashboard() {
                 {lunchboxesLoading ? (
                   <div className="space-y-4">
                     {[...Array(3)].map((_, i) => (
-                      <div key={i} className="flex items-center space-x-4 p-4 border border-border rounded-lg">
-                        <Skeleton className="w-16 h-16 rounded-lg" />
-                        <div className="flex-1 space-y-2">
-                          <Skeleton className="h-4 w-[200px]" />
-                          <Skeleton className="h-3 w-[100px]" />
-                        </div>
-                      </div>
+                      <Skeleton key={i} className="h-20 w-full" />
                     ))}
+                  </div>
+                ) : !lunchboxes || lunchboxes.length === 0 ? (
+                  <div className="text-center py-12">
+                    <Utensils className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                    <h3 className="text-lg font-semibold text-foreground mb-2">No menu items yet</h3>
+                    <p className="text-muted-foreground mb-4">Start building your menu by adding your first lunchbox</p>
+                    <Button onClick={() => setIsAddDialogOpen(true)}>
+                      <Plus className="w-4 h-4 mr-2" />
+                      Add Your First Item
+                    </Button>
                   </div>
                 ) : (
                   <div className="space-y-4">
-                    {lunchboxes?.map(lunchbox => (
-                      <div key={lunchbox.id} className="flex items-center space-x-4 p-4 border border-border rounded-lg" data-testid={`lunchbox-item-${lunchbox.id}`}>
-                        <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
-                          {lunchbox.imageUrl ? (
-                            <img src={lunchbox.imageUrl} alt={lunchbox.name} className="w-full h-full object-cover rounded-lg" />
-                          ) : (
-                            <Utensils className="w-8 h-8 text-muted-foreground" />
-                          )}
-                        </div>
-                        <div className="flex-1">
-                          <h3 className="font-medium text-card-foreground">{lunchbox.name}</h3>
-                          <p className="text-sm text-muted-foreground">${lunchbox.price}</p>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant={lunchbox.isAvailable ? "default" : "secondary"}>
-                              {lunchbox.isAvailable ? "Available" : "Unavailable"}
-                            </Badge>
-                            {lunchbox.dietaryTags?.map(tag => (
-                              <Badge key={tag} variant="outline">{tag}</Badge>
-                            ))}
+                    {lunchboxes.map((lunchbox) => (
+                      <div key={lunchbox.id} className="flex items-center justify-between p-4 border rounded-lg">
+                        <div className="flex items-center space-x-4">
+                          <div className="w-16 h-16 bg-muted rounded-lg flex items-center justify-center">
+                            {lunchbox.imageUrl ? (
+                              <img src={lunchbox.imageUrl} alt={lunchbox.name} className="w-full h-full object-cover rounded-lg" />
+                            ) : (
+                              <Utensils className="w-8 h-8 text-muted-foreground" />
+                            )}
                           </div>
-                          <div className="flex items-center space-x-1 mt-2">
-                            <Calendar className="w-3 h-3 text-muted-foreground" />
-                            <span className="text-xs text-muted-foreground">
-                              {lunchbox.availableDays?.map(day => day.slice(0, 3).toUpperCase()).join(", ") || "All days"}
-                            </span>
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2">
+                              <h3 className="font-medium text-foreground">{lunchbox.name}</h3>
+                              <Badge variant={lunchbox.isAvailable ? "default" : "secondary"}>
+                                {lunchbox.isAvailable ? "Available" : "Unavailable"}
+                              </Badge>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{lunchbox.description}</p>
+                            <p className="text-lg font-semibold text-primary mt-1">${lunchbox.price}</p>
+                            {lunchbox.dietaryTags && lunchbox.dietaryTags.length > 0 && (
+                              <div className="flex space-x-1 mt-2">
+                                {lunchbox.dietaryTags.map(tag => (
+                                  <Badge key={tag} variant="outline" className="text-xs">
+                                    {tag}
+                                  </Badge>
+                                ))}
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleEditLunchbox(lunchbox)}
-                            data-testid={`button-edit-${lunchbox.id}`}
+                            data-testid={`button-edit-lunchbox-${lunchbox.id}`}
                           >
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
+                          <Button
+                            size="sm"
+                            variant="destructive"
                             onClick={() => handleDeleteLunchbox(lunchbox.id)}
-                            data-testid={`button-delete-${lunchbox.id}`}
+                            data-testid={`button-delete-lunchbox-${lunchbox.id}`}
                           >
                             <Trash2 className="w-4 h-4" />
                           </Button>
@@ -590,59 +528,156 @@ export default function RestaurantDashboard() {
                 )}
               </CardContent>
             </Card>
-          </div>
+          </TabsContent>
 
-          {/* Recent Orders */}
-          <div className="lg:col-span-1">
+          <TabsContent value="orders" className="mt-0">
             <Card>
               <CardHeader>
-                <CardTitle>Recent Orders</CardTitle>
-                <CardDescription>Latest orders for your restaurant</CardDescription>
+                <CardTitle>Order Management</CardTitle>
+                <CardDescription>View and manage all incoming orders</CardDescription>
               </CardHeader>
               <CardContent>
-                {ordersLoading ? (
-                  <div className="space-y-4">
-                    {[...Array(3)].map((_, i) => (
-                      <div key={i} className="border border-border rounded-lg p-4">
-                        <Skeleton className="h-4 w-[100px] mb-2" />
-                        <Skeleton className="h-3 w-[150px] mb-1" />
-                        <Skeleton className="h-3 w-[80px]" />
-                      </div>
-                    ))}
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {orders?.slice(0, 10).map(order => (
-                      <div key={order.id} className="border border-border rounded-lg p-4" data-testid={`order-item-${order.id}`}>
-                        <div className="flex items-center justify-between mb-2">
-                          <span className="text-sm font-medium">#{order.id.slice(-6)}</span>
-                          <Select 
-                            value={order.status}
-                            onValueChange={(status) => updateOrderStatusMutation.mutate({ orderId: order.id, status })}
-                          >
-                            <SelectTrigger className="w-32 h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="pending">Pending</SelectItem>
-                              <SelectItem value="confirmed">Confirmed</SelectItem>
-                              <SelectItem value="preparing">Preparing</SelectItem>
-                              <SelectItem value="ready">Ready</SelectItem>
-                              <SelectItem value="out_for_delivery">Out for Delivery</SelectItem>
-                              <SelectItem value="delivered">Delivered</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <p className="text-sm text-muted-foreground mb-1">{order.deliveryLocation}</p>
-                        <p className="text-sm font-medium text-primary">${order.total}</p>
-                      </div>
-                    ))}
-                  </div>
-                )}
+                <div className="text-center py-4">
+                  <Button 
+                    onClick={() => setLocation("/restaurant-orders")}
+                    className="w-full sm:w-auto"
+                  >
+                    <ClipboardList className="w-4 h-4 mr-2" />
+                    Open Detailed Order Management
+                  </Button>
+                  <p className="text-sm text-muted-foreground mt-2">
+                    Access advanced filtering, bulk actions, and detailed order management
+                  </p>
+                </div>
               </CardContent>
             </Card>
-          </div>
-        </div>
+          </TabsContent>
+
+          <TabsContent value="profile" className="mt-0">
+            <Card>
+              <CardHeader>
+                <CardTitle>Restaurant Profile</CardTitle>
+                <CardDescription>Manage your restaurant information</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div>
+                    <label className="text-sm font-medium">Restaurant Name</label>
+                    <p className="text-lg">{restaurant?.name || "Loading..."}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Description</label>
+                    <p className="text-muted-foreground">{restaurant?.description || "No description available"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Cuisine Type</label>
+                    <p className="text-muted-foreground">{restaurant?.cuisine || "Not specified"}</p>
+                  </div>
+                  <div>
+                    <label className="text-sm font-medium">Rating</label>
+                    <div className="flex items-center space-x-2">
+                      <Star className="w-4 h-4 text-yellow-500" />
+                      <span>{restaurant?.rating || "0.0"}</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+        </Tabs>
+
+        {/* Edit Lunchbox Dialog */}
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Lunchbox</DialogTitle>
+              <DialogDescription>
+                Update your lunchbox details
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="name"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Name</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Lunchbox name" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Describe the lunchbox contents" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="price"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Price</FormLabel>
+                      <FormControl>
+                        <Input type="number" step="0.01" placeholder="19.99" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL (optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="isAvailable"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                      <FormControl>
+                        <Checkbox
+                          checked={field.value}
+                          onCheckedChange={field.onChange}
+                        />
+                      </FormControl>
+                      <div className="space-y-1 leading-none">
+                        <FormLabel>Available for ordering</FormLabel>
+                      </div>
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+                    Cancel
+                  </Button>
+                  <Button type="submit" disabled={updateLunchboxMutation.isPending}>
+                    {updateLunchboxMutation.isPending ? "Updating..." : "Update Lunchbox"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );
