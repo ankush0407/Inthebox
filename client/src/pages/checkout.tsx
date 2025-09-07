@@ -227,6 +227,8 @@ export default function Checkout() {
 
   const handleOrderSuccess = () => {
     clearCart();
+    // Invalidate orders cache to show the new order
+    queryClient.invalidateQueries({ queryKey: ["/api/orders"] });
     toast({
       title: "Order Placed Successfully!",
       description: "Your lunchbox order has been confirmed and is being prepared.",
