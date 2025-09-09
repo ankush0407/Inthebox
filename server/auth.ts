@@ -78,7 +78,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.GOOGLE_CLIENT_ID,
           clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-          callbackURL: `${process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000'}/api/auth/google/callback`,
+          callbackURL: `https://intheboxgroup.com/api/auth/google/callback`,
         },
         async (accessToken, refreshToken, profile, done) => {
           try {
@@ -120,7 +120,7 @@ export function setupAuth(app: Express) {
         {
           clientID: process.env.FACEBOOK_APP_ID,
           clientSecret: process.env.FACEBOOK_APP_SECRET,
-          callbackURL: `${process.env.REPL_SLUG ? `https://${process.env.REPL_SLUG}.${process.env.REPL_OWNER}.repl.co` : 'http://localhost:5000'}/api/auth/facebook/callback`,
+          callbackURL: `https://intheboxgroup.com/api/auth/facebook/callback`,
           profileFields: ["id", "displayName", "emails"],
         },
         async (accessToken, refreshToken, profile, done) => {
