@@ -265,7 +265,7 @@ export class DatabaseStorage implements IStorage {
 
   async deleteDeliveryLocation(id: string): Promise<boolean> {
     const result = await db.delete(deliveryLocations).where(eq(deliveryLocations.id, id));
-    return result.rowCount > 0;
+    return (result.rowCount ?? 0) > 0;
   }
 }
 

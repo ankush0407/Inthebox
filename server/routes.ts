@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertRestaurantSchema, insertLunchboxSchema, insertOrderSchema, insertOrderItemSchema, Order } from "@shared/schema";
+import { insertRestaurantSchema, insertLunchboxSchema, insertOrderSchema, insertOrderItemSchema, Order, insertDeliveryLocationSchema, DeliveryLocation } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import Stripe from "stripe";
 
@@ -437,6 +437,66 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.json(updatedOrder);
     } catch (error: any) {
       res.status(400).json({ message: "Error updating order status: " + error.message });
+    }
+  });
+
+  // Delivery Location routes (Admin only)
+  app.get("/api/delivery-locations/all", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const locations = await storage.getAllDeliveryLocations();
+      res.json(locations);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching delivery locations: " + error.message });
+    }
+  });
+
+  app.post("/api/delivery-locations", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const validatedData = insertDeliveryLocationSchema.parse(req.body);
+      const location = await storage.createDeliveryLocation(validatedData);
+      res.status(201).json(location);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error creating delivery location: " + error.message });
+    }
+  });
+
+  app.put("/api/delivery-locations/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const location = await storage.updateDeliveryLocation(req.params.id, req.body);
+      if (!location) {
+        return res.status(404).json({ message: "Delivery location not found" });
+      }
+      res.json(location);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating delivery location: " + error.message });
+    }
+  });
+
+  app.delete("/api/delivery-locations/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const success = await storage.deleteDeliveryLocation(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Delivery location not found" });
+      }
+      res.json({ message: "Delivery location deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: "Error deleting delivery location: " + error.message });
     }
   });
 
