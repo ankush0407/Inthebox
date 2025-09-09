@@ -54,6 +54,7 @@ export default function AdminPanel() {
       imageUrl: "",
       deliveryTime: "",
       deliveryFee: "",
+      deliveryLocationId: "",
       ownerId: "",
       isActive: true,
     },
@@ -267,7 +268,7 @@ export default function AdminPanel() {
                   <DialogHeader>
                     <DialogTitle>Add New Restaurant</DialogTitle>
                     <DialogDescription>
-                      Onboard a new restaurant to the platform
+                      Onboard a new restaurant to the platform. Delivery locations must be configured first.
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
@@ -350,6 +351,30 @@ export default function AdminPanel() {
                             <FormControl>
                               <Input placeholder="https://example.com/image.jpg" {...field} data-testid="input-restaurant-image" />
                             </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="deliveryLocationId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Delivery Location *</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-delivery-location">
+                                  <SelectValue placeholder="Select a delivery location" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {deliveryLocations?.filter(loc => loc.isActive).map(location => (
+                                  <SelectItem key={location.id} value={location.id}>
+                                    {location.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             <FormMessage />
                           </FormItem>
                         )}
