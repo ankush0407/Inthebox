@@ -239,6 +239,34 @@ export class DatabaseStorage implements IStorage {
   async getDeliveryLocations(): Promise<DeliveryLocation[]> {
     return await db.select().from(deliveryLocations).where(eq(deliveryLocations.isActive, true));
   }
+
+  async getAllDeliveryLocations(): Promise<DeliveryLocation[]> {
+    return await db.select().from(deliveryLocations);
+  }
+
+  async createDeliveryLocation(data: { name: string; address: string }): Promise<DeliveryLocation> {
+    const [location] = await db.insert(deliveryLocations).values({
+      name: data.name,
+      address: data.address,
+      isActive: true,
+    }).returning();
+    return location;
+  }
+
+  async updateDeliveryLocation(id: string, data: { name?: string; address?: string; isActive?: boolean }): Promise<DeliveryLocation | null> {
+    const [location] = await db.update(deliveryLocations)
+      .set({
+        ...data,
+      })
+      .where(eq(deliveryLocations.id, id))
+      .returning();
+    return location || null;
+  }
+
+  async deleteDeliveryLocation(id: string): Promise<boolean> {
+    const result = await db.delete(deliveryLocations).where(eq(deliveryLocations.id, id));
+    return result.rowCount > 0;
+  }
 }
 
 export const storage = new DatabaseStorage();
