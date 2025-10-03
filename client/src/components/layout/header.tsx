@@ -50,26 +50,6 @@ export default function Header() {
 
           {/* Navigation */}
           <nav className="hidden md:flex items-center space-x-8">
-            {user?.role === "restaurant_owner" && (
-              <>
-                <Button 
-                  variant="ghost" 
-                  className="text-muted-foreground hover:text-primary"
-                  onClick={() => setLocation("/restaurant-dashboard")}
-                  data-testid="nav-dashboard"
-                >
-                  Dashboard
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  className="text-muted-foreground hover:text-primary"
-                  onClick={() => setLocation("/restaurant-orders")}
-                  data-testid="nav-orders"
-                >
-                  Orders
-                </Button>
-              </>
-            )}
             {user?.role === "admin" && (
               <Button 
                 variant="ghost" 
@@ -147,10 +127,22 @@ export default function Header() {
                     My Orders
                   </DropdownMenuItem>
                 )}
-                {(user?.role === "restaurant_owner" || user?.role === "admin") && (
-                  <DropdownMenuItem onClick={navigateBasedOnRole} data-testid="menu-dashboard">
+                {user?.role === "restaurant_owner" && (
+                  <>
+                    <DropdownMenuItem onClick={() => setLocation("/restaurant-dashboard")} data-testid="menu-dashboard">
+                      <Settings className="mr-2 h-4 w-4" />
+                      Dashboard
+                    </DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => setLocation("/restaurant-orders")} data-testid="menu-orders">
+                      <Receipt className="mr-2 h-4 w-4" />
+                      Orders
+                    </DropdownMenuItem>
+                  </>
+                )}
+                {user?.role === "admin" && (
+                  <DropdownMenuItem onClick={() => setLocation("/admin-panel")} data-testid="menu-dashboard">
                     <Settings className="mr-2 h-4 w-4" />
-                    {user.role === "admin" ? "Admin Panel" : "Dashboard"}
+                    Admin Panel
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuItem 

@@ -28,6 +28,8 @@ export default function AdminPanel() {
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [isEditRestaurantDialogOpen, setIsEditRestaurantDialogOpen] = useState(false);
+  const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<DeliveryLocation | null>(null);
 
@@ -161,8 +163,57 @@ export default function AdminPanel() {
     },
   });
 
+  const updateRestaurantMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${editingRestaurant?.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+      setIsEditRestaurantDialogOpen(false);
+      form.reset();
+      setEditingRestaurant(null);
+      toast({
+        title: "Success",
+        description: "Restaurant updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const toggleRestaurantStatusMutation = useMutation({
+    mutationFn: async ({ id, isActive }: { id: string; isActive: boolean }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${id}`, { isActive });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
+      toast({
+        title: "Success",
+        description: "Restaurant status updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: any) => {
-    addRestaurantMutation.mutate(data);
+    if (editingRestaurant) {
+      updateRestaurantMutation.mutate(data);
+    } else {
+      addRestaurantMutation.mutate(data);
+    }
   };
 
   const onLocationSubmit = (data: any) => {
@@ -186,6 +237,32 @@ export default function AdminPanel() {
   const handleDeleteLocation = (id: string) => {
     if (confirm("Are you sure you want to delete this delivery location?")) {
       deleteLocationMutation.mutate(id);
+    }
+  };
+
+  const handleEditRestaurant = (restaurant: Restaurant) => {
+    setEditingRestaurant(restaurant);
+    form.reset({
+      name: restaurant.name,
+      description: restaurant.description || "",
+      cuisine: restaurant.cuisine,
+      imageUrl: restaurant.imageUrl || "",
+      deliveryTime: restaurant.deliveryTime || "",
+      deliveryFee: restaurant.deliveryFee || "",
+      deliveryLocationId: restaurant.deliveryLocationId || "",
+      ownerId: restaurant.ownerId,
+      isActive: restaurant.isActive ?? true,
+    });
+    setIsEditRestaurantDialogOpen(true);
+  };
+
+  const handleToggleRestaurantStatus = (restaurant: Restaurant) => {
+    const action = restaurant.isActive ? "deactivate" : "activate";
+    if (confirm(`Are you sure you want to ${action} this restaurant?`)) {
+      toggleRestaurantStatusMutation.mutate({
+        id: restaurant.id,
+        isActive: !restaurant.isActive,
+      });
     }
   };
 
@@ -520,7 +597,12 @@ export default function AdminPanel() {
                 <span className="text-sm text-muted-foreground">Restaurant Owners</span>
                 <span className="text-sm font-medium">-</span>
               </div>
-              <Button className="w-full mt-3" variant="secondary" data-testid="button-user-management">
+              <Button 
+                className="w-full mt-3" 
+                variant="secondary" 
+                onClick={() => setLocation("/admin/users")}
+                data-testid="button-user-management"
+              >
                 User Management
               </Button>
             </CardContent>
@@ -542,7 +624,12 @@ export default function AdminPanel() {
                 <span className="text-sm text-muted-foreground">Revenue</span>
                 <span className="text-sm font-medium text-accent">-</span>
               </div>
-              <Button className="w-full mt-3" variant="outline" data-testid="button-view-analytics">
+              <Button 
+                className="w-full mt-3" 
+                variant="outline" 
+                onClick={() => setLocation("/admin/analytics")}
+                data-testid="button-view-analytics"
+              >
                 View Analytics
               </Button>
             </CardContent>
@@ -616,12 +703,19 @@ export default function AdminPanel() {
                       <TableCell className="text-sm font-medium">⭐ {restaurant.rating}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex items-center justify-end space-x-2">
-                          <Button variant="outline" size="sm" data-testid={`button-edit-restaurant-${restaurant.id}`}>
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            onClick={() => handleEditRestaurant(restaurant)}
+                            data-testid={`button-edit-restaurant-${restaurant.id}`}
+                          >
                             Edit
                           </Button>
                           <Button 
                             variant={restaurant.isActive ? "destructive" : "default"} 
                             size="sm"
+                            onClick={() => handleToggleRestaurantStatus(restaurant)}
+                            disabled={toggleRestaurantStatusMutation.isPending}
                             data-testid={`button-toggle-restaurant-${restaurant.id}`}
                           >
                             {restaurant.isActive ? "Deactivate" : "Activate"}
@@ -731,6 +825,147 @@ export default function AdminPanel() {
             )}
           </CardContent>
         </Card>
+
+        {/* Edit Restaurant Dialog */}
+        <Dialog open={isEditRestaurantDialogOpen} onOpenChange={setIsEditRestaurantDialogOpen}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Edit Restaurant</DialogTitle>
+              <DialogDescription>
+                Update restaurant information and settings
+              </DialogDescription>
+            </DialogHeader>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Restaurant Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Restaurant name" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="cuisine"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Cuisine Type</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Mediterranean, Italian" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="description"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Description</FormLabel>
+                      <FormControl>
+                        <Textarea placeholder="Restaurant description" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="grid grid-cols-2 gap-4">
+                  <FormField
+                    control={form.control}
+                    name="deliveryTime"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Time</FormLabel>
+                        <FormControl>
+                          <Input placeholder="25-35 min" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="deliveryFee"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Delivery Fee</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="2.99" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </div>
+                <FormField
+                  control={form.control}
+                  name="imageUrl"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Image URL (optional)</FormLabel>
+                      <FormControl>
+                        <Input placeholder="https://example.com/image.jpg" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="deliveryLocationId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Location</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a delivery location" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {deliveryLocations?.map(location => (
+                            <SelectItem key={location.id} value={location.id}>
+                              {location.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <div className="flex justify-end space-x-2">
+                  <Button 
+                    type="button" 
+                    variant="outline" 
+                    onClick={() => {
+                      setIsEditRestaurantDialogOpen(false);
+                      setEditingRestaurant(null);
+                      form.reset();
+                    }}
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    type="submit" 
+                    disabled={updateRestaurantMutation.isPending}
+                  >
+                    {updateRestaurantMutation.isPending ? "Updating..." : "Update Restaurant"}
+                  </Button>
+                </div>
+              </form>
+            </Form>
+          </DialogContent>
+        </Dialog>
       </div>
     </div>
   );

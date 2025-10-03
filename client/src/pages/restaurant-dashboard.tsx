@@ -483,6 +483,40 @@ export default function RestaurantDashboard() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="availableDays"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Available Days (Weekdays Only)</FormLabel>
+                                <div className="grid grid-cols-5 gap-2">
+                                  {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                                    const dayValue = day.toLowerCase();
+                                    return (
+                                      <div key={day} className="flex items-center space-x-2">
+                                        <Checkbox
+                                          checked={field.value?.includes(dayValue)}
+                                          onCheckedChange={(checked) => {
+                                            const current = field.value || [];
+                                            if (checked) {
+                                              field.onChange([...current, dayValue]);
+                                            } else {
+                                              field.onChange(current.filter((d: string) => d !== dayValue));
+                                            }
+                                          }}
+                                          data-testid={`checkbox-day-${dayValue}`}
+                                        />
+                                        <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                          {day.slice(0, 3)}
+                                        </label>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                           <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => {
                               setIsAddDialogOpen(false);
@@ -744,6 +778,40 @@ export default function RestaurantDashboard() {
                       <div className="space-y-1 leading-none">
                         <FormLabel>Available for ordering</FormLabel>
                       </div>
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="availableDays"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Available Days (Weekdays Only)</FormLabel>
+                      <div className="grid grid-cols-5 gap-2">
+                        {["Monday", "Tuesday", "Wednesday", "Thursday", "Friday"].map((day) => {
+                          const dayValue = day.toLowerCase();
+                          return (
+                            <div key={day} className="flex items-center space-x-2">
+                              <Checkbox
+                                checked={field.value?.includes(dayValue)}
+                                onCheckedChange={(checked) => {
+                                  const current = field.value || [];
+                                  if (checked) {
+                                    field.onChange([...current, dayValue]);
+                                  } else {
+                                    field.onChange(current.filter((d: string) => d !== dayValue));
+                                  }
+                                }}
+                                data-testid={`checkbox-edit-day-${dayValue}`}
+                              />
+                              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                                {day.slice(0, 3)}
+                              </label>
+                            </div>
+                          );
+                        })}
+                      </div>
+                      <FormMessage />
                     </FormItem>
                   )}
                 />

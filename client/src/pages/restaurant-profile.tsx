@@ -87,12 +87,18 @@ export default function RestaurantProfile() {
         ownerPhoneNumber: user?.phoneNumber || "",
       });
       setLogoUrl(restaurant.imageUrl || "");
-    } else if (user) {
-      // Set owner information even when creating new restaurant
-      form.setValue("ownerFullName", user.fullName || "");
-      form.setValue("ownerPhoneNumber", user.phoneNumber || "");
+    } else if (user && !restaurant) {
+      // Set owner information only when creating new restaurant (one-time)
+      const currentValues = form.getValues();
+      if (!currentValues.ownerFullName) {
+        form.reset({
+          ...currentValues,
+          ownerFullName: user.fullName || "",
+          ownerPhoneNumber: user.phoneNumber || "",
+        });
+      }
     }
-  }, [restaurant, form, user]);
+  }, [restaurant, user]);
 
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantProfileFormData) => {
@@ -309,6 +315,9 @@ export default function RestaurantProfile() {
                         <ImageIcon className="w-4 h-4" />
                         <span>Restaurant Logo</span>
                       </Label>
+                      <p className="text-sm text-muted-foreground mb-3">
+                        Upload a square logo (recommended: 400x400px, max 5MB). This will be displayed on your restaurant profile.
+                      </p>
                       
                       {logoUrl && (
                         <div className="mb-4">
@@ -333,7 +342,6 @@ export default function RestaurantProfile() {
                           if (result.successful && result.successful.length > 0) {
                             const uploadedFile = result.successful[0];
                             const rawUrl = uploadedFile.uploadURL?.split('?')[0] || "";
-                            // Convert to local serving path
                             const imageUrl = rawUrl.startsWith("https://storage.googleapis.com/") 
                               ? `/public-objects/${rawUrl.split('/').slice(-1)[0]}` 
                               : rawUrl;
@@ -345,7 +353,7 @@ export default function RestaurantProfile() {
                             });
                           }
                         }}
-                        buttonClassName="w-full"
+                        buttonClassName="w-full sm:w-auto"
                       >
                         <Upload className="mr-2 h-4 w-4" />
                         {logoUrl ? "Change Logo" : "Upload Logo"}
