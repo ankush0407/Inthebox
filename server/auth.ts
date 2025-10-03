@@ -105,7 +105,8 @@ export function setupAuth(app: Express) {
             }
             
             return done(null, user);
-          } catch (error) {
+          } catch (error: any) {
+            console.error("Google OAuth error:", error);
             return done(error);
           }
         }
@@ -148,7 +149,8 @@ export function setupAuth(app: Express) {
             }
             
             return done(null, user);
-          } catch (error) {
+          } catch (error: any) {
+            console.error("Facebook OAuth error:", error);
             return done(error);
           }
         }
@@ -158,8 +160,13 @@ export function setupAuth(app: Express) {
 
   passport.serializeUser((user, done) => done(null, user.id));
   passport.deserializeUser(async (id: string, done) => {
-    const user = await storage.getUser(id);
-    done(null, user);
+    try {
+      const user = await storage.getUser(id);
+      done(null, user);
+    } catch (error: any) {
+      console.error("Session deserialization error:", error);
+      done(error);
+    }
   });
 
   app.post("/api/register", async (req, res, next) => {
@@ -183,9 +190,16 @@ export function setupAuth(app: Express) {
         if (err) return next(err);
         res.status(201).json(user);
       });
-    } catch (error) {
+    } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json({ error: "Registration failed" });
+      
+      if (error?.message?.includes('endpoint has been disabled')) {
+        return res.status(503).json({ 
+          error: "Database is temporarily unavailable. Please try again in a moment." 
+        });
+      }
+      
+      res.status(500).json({ error: "Registration failed. Please try again." });
     }
   });
 

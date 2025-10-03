@@ -12,6 +12,7 @@ import { eq, desc, and } from "drizzle-orm";
 import session from "express-session";
 import connectPg from "connect-pg-simple";
 import { pool } from "./db";
+import { withRetry } from "./dbRetry";
 
 const PostgresSessionStore = connectPg(session);
 
@@ -67,205 +68,265 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getUser(id: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.id, id));
-    return user || undefined;
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.id, id));
+      return user || undefined;
+    });
   }
 
   async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user || undefined;
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.username, username));
+      return user || undefined;
+    });
   }
 
   async getUserByEmail(email: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.email, email));
-    return user || undefined;
+    return withRetry(async () => {
+      const [user] = await db.select().from(users).where(eq(users.email, email));
+      return user || undefined;
+    });
   }
 
   async getUserByProviderId(provider: string, providerId: string): Promise<User | undefined> {
-    const [user] = await db
-      .select()
-      .from(users)
-      .where(and(eq(users.provider, provider), eq(users.providerId, providerId)));
-    return user || undefined;
+    return withRetry(async () => {
+      const [user] = await db
+        .select()
+        .from(users)
+        .where(and(eq(users.provider, provider), eq(users.providerId, providerId)));
+      return user || undefined;
+    });
   }
 
   async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db
-      .insert(users)
-      .values(insertUser)
-      .returning();
-    return user;
+    return withRetry(async () => {
+      const [user] = await db
+        .insert(users)
+        .values(insertUser)
+        .returning();
+      return user;
+    });
   }
 
   async linkOAuthAccount(userId: string, provider: string, providerId: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ provider, providerId })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+    return withRetry(async () => {
+      const [user] = await db
+        .update(users)
+        .set({ provider, providerId })
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
   }
 
   async completeProfile(userId: string, role: string): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set({ role: role as any, profileComplete: true })
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+    return withRetry(async () => {
+      const [user] = await db
+        .update(users)
+        .set({ role: role as any, profileComplete: true })
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
   }
 
   async getRestaurants(): Promise<Restaurant[]> {
-    return await db.select().from(restaurants).where(eq(restaurants.isActive, true));
+    return withRetry(async () => {
+      return await db.select().from(restaurants).where(eq(restaurants.isActive, true));
+    });
   }
 
   async getRestaurant(id: string): Promise<Restaurant | undefined> {
-    const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, id));
-    return restaurant || undefined;
+    return withRetry(async () => {
+      const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.id, id));
+      return restaurant || undefined;
+    });
   }
 
   async getRestaurantByOwnerId(ownerId: string): Promise<Restaurant | undefined> {
-    const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.ownerId, ownerId));
-    return restaurant || undefined;
+    return withRetry(async () => {
+      const [restaurant] = await db.select().from(restaurants).where(eq(restaurants.ownerId, ownerId));
+      return restaurant || undefined;
+    });
   }
 
   async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
-    const [newRestaurant] = await db
-      .insert(restaurants)
-      .values(restaurant)
-      .returning();
-    return newRestaurant;
+    return withRetry(async () => {
+      const [newRestaurant] = await db
+        .insert(restaurants)
+        .values(restaurant)
+        .returning();
+      return newRestaurant;
+    });
   }
 
   async updateRestaurant(id: string, updates: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
-    const [restaurant] = await db
-      .update(restaurants)
-      .set(updates)
-      .where(eq(restaurants.id, id))
-      .returning();
-    return restaurant || undefined;
+    return withRetry(async () => {
+      const [restaurant] = await db
+        .update(restaurants)
+        .set(updates)
+        .where(eq(restaurants.id, id))
+        .returning();
+      return restaurant || undefined;
+    });
   }
 
   async getLunchboxesByRestaurant(restaurantId: string): Promise<Lunchbox[]> {
-    return await db.select().from(lunchboxes).where(eq(lunchboxes.restaurantId, restaurantId));
+    return withRetry(async () => {
+      return await db.select().from(lunchboxes).where(eq(lunchboxes.restaurantId, restaurantId));
+    });
   }
 
   async getLunchbox(id: string): Promise<Lunchbox | undefined> {
-    const [lunchbox] = await db.select().from(lunchboxes).where(eq(lunchboxes.id, id));
-    return lunchbox || undefined;
+    return withRetry(async () => {
+      const [lunchbox] = await db.select().from(lunchboxes).where(eq(lunchboxes.id, id));
+      return lunchbox || undefined;
+    });
   }
 
   async createLunchbox(lunchbox: InsertLunchbox): Promise<Lunchbox> {
-    const [newLunchbox] = await db
-      .insert(lunchboxes)
-      .values(lunchbox)
-      .returning();
-    return newLunchbox;
+    return withRetry(async () => {
+      const [newLunchbox] = await db
+        .insert(lunchboxes)
+        .values(lunchbox)
+        .returning();
+      return newLunchbox;
+    });
   }
 
   async updateLunchbox(id: string, updates: Partial<InsertLunchbox>): Promise<Lunchbox | undefined> {
-    const [lunchbox] = await db
-      .update(lunchboxes)
-      .set(updates)
-      .where(eq(lunchboxes.id, id))
-      .returning();
-    return lunchbox || undefined;
+    return withRetry(async () => {
+      const [lunchbox] = await db
+        .update(lunchboxes)
+        .set(updates)
+        .where(eq(lunchboxes.id, id))
+        .returning();
+      return lunchbox || undefined;
+    });
   }
 
   async deleteLunchbox(id: string): Promise<boolean> {
-    const result = await db.delete(lunchboxes).where(eq(lunchboxes.id, id));
-    return (result.rowCount || 0) > 0;
+    return withRetry(async () => {
+      const result = await db.delete(lunchboxes).where(eq(lunchboxes.id, id));
+      return (result.rowCount || 0) > 0;
+    });
   }
 
   async createOrder(order: InsertOrder): Promise<Order> {
-    const [newOrder] = await db
-      .insert(orders)
-      .values(order)
-      .returning();
-    return newOrder;
+    return withRetry(async () => {
+      const [newOrder] = await db
+        .insert(orders)
+        .values(order)
+        .returning();
+      return newOrder;
+    });
   }
 
   async getOrder(id: string): Promise<Order | undefined> {
-    const [order] = await db.select().from(orders).where(eq(orders.id, id));
-    return order || undefined;
+    return withRetry(async () => {
+      const [order] = await db.select().from(orders).where(eq(orders.id, id));
+      return order || undefined;
+    });
   }
 
   async getOrdersByCustomer(customerId: string): Promise<Order[]> {
-    return await db
-      .select()
-      .from(orders)
-      .where(eq(orders.customerId, customerId))
-      .orderBy(desc(orders.createdAt));
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(orders)
+        .where(eq(orders.customerId, customerId))
+        .orderBy(desc(orders.createdAt));
+    });
   }
 
   async getOrdersByRestaurant(restaurantId: string): Promise<Order[]> {
-    return await db
-      .select()
-      .from(orders)
-      .where(eq(orders.restaurantId, restaurantId))
-      .orderBy(desc(orders.createdAt));
+    return withRetry(async () => {
+      return await db
+        .select()
+        .from(orders)
+        .where(eq(orders.restaurantId, restaurantId))
+        .orderBy(desc(orders.createdAt));
+    });
   }
 
   async updateOrderStatus(id: string, status: string): Promise<Order | undefined> {
-    const [order] = await db
-      .update(orders)
-      .set({ status: status as any })
-      .where(eq(orders.id, id))
-      .returning();
-    return order || undefined;
+    return withRetry(async () => {
+      const [order] = await db
+        .update(orders)
+        .set({ status: status as any })
+        .where(eq(orders.id, id))
+        .returning();
+      return order || undefined;
+    });
   }
 
   async createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem> {
-    const [newOrderItem] = await db
-      .insert(orderItems)
-      .values(orderItem)
-      .returning();
-    return newOrderItem;
+    return withRetry(async () => {
+      const [newOrderItem] = await db
+        .insert(orderItems)
+        .values(orderItem)
+        .returning();
+      return newOrderItem;
+    });
   }
 
   async getOrderItems(orderId: string): Promise<OrderItem[]> {
-    return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    return withRetry(async () => {
+      return await db.select().from(orderItems).where(eq(orderItems.orderId, orderId));
+    });
   }
 
   async updateUserProfile(userId: string, profile: { fullName?: string; phoneNumber?: string; deliveryLocationId?: string }): Promise<User> {
-    const [user] = await db
-      .update(users)
-      .set(profile)
-      .where(eq(users.id, userId))
-      .returning();
-    return user;
+    return withRetry(async () => {
+      const [user] = await db
+        .update(users)
+        .set(profile)
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
   }
 
   async getDeliveryLocations(): Promise<DeliveryLocation[]> {
-    return await db.select().from(deliveryLocations).where(eq(deliveryLocations.isActive, true));
+    return withRetry(async () => {
+      return await db.select().from(deliveryLocations).where(eq(deliveryLocations.isActive, true));
+    });
   }
 
   async getAllDeliveryLocations(): Promise<DeliveryLocation[]> {
-    return await db.select().from(deliveryLocations);
+    return withRetry(async () => {
+      return await db.select().from(deliveryLocations);
+    });
   }
 
   async createDeliveryLocation(data: { name: string; address: string }): Promise<DeliveryLocation> {
-    const [location] = await db.insert(deliveryLocations).values({
-      name: data.name,
-      address: data.address,
-      isActive: true,
-    }).returning();
-    return location;
+    return withRetry(async () => {
+      const [location] = await db.insert(deliveryLocations).values({
+        name: data.name,
+        address: data.address,
+        isActive: true,
+      }).returning();
+      return location;
+    });
   }
 
   async updateDeliveryLocation(id: string, data: { name?: string; address?: string; isActive?: boolean }): Promise<DeliveryLocation | null> {
-    const [location] = await db.update(deliveryLocations)
-      .set({
-        ...data,
-      })
-      .where(eq(deliveryLocations.id, id))
-      .returning();
-    return location || null;
+    return withRetry(async () => {
+      const [location] = await db.update(deliveryLocations)
+        .set({
+          ...data,
+        })
+        .where(eq(deliveryLocations.id, id))
+        .returning();
+      return location || null;
+    });
   }
 
   async deleteDeliveryLocation(id: string): Promise<boolean> {
-    const result = await db.delete(deliveryLocations).where(eq(deliveryLocations.id, id));
-    return (result.rowCount ?? 0) > 0;
+    return withRetry(async () => {
+      const result = await db.delete(deliveryLocations).where(eq(deliveryLocations.id, id));
+      return (result.rowCount ?? 0) > 0;
+    });
   }
 }
 
