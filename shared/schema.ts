@@ -47,7 +47,7 @@ export const lunchboxes = pgTable("lunchboxes", {
   dietaryTags: text("dietary_tags").array(),
   availableDays: text("available_days").array().default(sql`'{monday,tuesday,wednesday,thursday,friday}'`),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
-  deliveryBuildingId: varchar("delivery_building_id").references(() => deliveryBuildings.id),
+  deliveryBuildingIds: varchar("delivery_building_ids").array(),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -123,10 +123,6 @@ export const lunchboxesRelations = relations(lunchboxes, ({ one, many }) => ({
   restaurant: one(restaurants, {
     fields: [lunchboxes.restaurantId],
     references: [restaurants.id],
-  }),
-  deliveryBuilding: one(deliveryBuildings, {
-    fields: [lunchboxes.deliveryBuildingId],
-    references: [deliveryBuildings.id],
   }),
   orderItems: many(orderItems),
 }));
