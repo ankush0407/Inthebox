@@ -2,7 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { setupAuth } from "./auth";
-import { insertRestaurantSchema, insertLunchboxSchema, insertOrderSchema, insertOrderItemSchema, Order, insertDeliveryLocationSchema, DeliveryLocation } from "@shared/schema";
+import { insertRestaurantSchema, insertLunchboxSchema, insertOrderSchema, insertOrderItemSchema, Order, insertDeliveryLocationSchema, DeliveryLocation, insertDeliveryBuildingSchema, DeliveryBuilding } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import Stripe from "stripe";
 
@@ -534,6 +534,84 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error: any) {
       console.error("Get delivery locations error:", error);
       res.status(500).json({ error: error.message });
+    }
+  });
+
+  // Delivery Building routes
+  app.get("/api/delivery-buildings", async (req, res) => {
+    try {
+      const buildings = await storage.getDeliveryBuildings();
+      res.json(buildings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching delivery buildings: " + error.message });
+    }
+  });
+
+  app.get("/api/delivery-buildings/all", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const buildings = await storage.getAllDeliveryBuildings();
+      res.json(buildings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching delivery buildings: " + error.message });
+    }
+  });
+
+  app.get("/api/delivery-buildings/location/:locationId", async (req, res) => {
+    try {
+      const buildings = await storage.getDeliveryBuildingsByLocation(req.params.locationId);
+      res.json(buildings);
+    } catch (error: any) {
+      res.status(500).json({ message: "Error fetching delivery buildings: " + error.message });
+    }
+  });
+
+  app.post("/api/delivery-buildings", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const validatedData = insertDeliveryBuildingSchema.parse(req.body);
+      const building = await storage.createDeliveryBuilding(validatedData);
+      res.status(201).json(building);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error creating delivery building: " + error.message });
+    }
+  });
+
+  app.put("/api/delivery-buildings/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const building = await storage.updateDeliveryBuilding(req.params.id, req.body);
+      if (!building) {
+        return res.status(404).json({ message: "Delivery building not found" });
+      }
+      res.json(building);
+    } catch (error: any) {
+      res.status(400).json({ message: "Error updating delivery building: " + error.message });
+    }
+  });
+
+  app.delete("/api/delivery-buildings/:id", async (req, res) => {
+    if (!req.isAuthenticated() || req.user.role !== "admin") {
+      return res.sendStatus(403);
+    }
+
+    try {
+      const success = await storage.deleteDeliveryBuilding(req.params.id);
+      if (!success) {
+        return res.status(404).json({ message: "Delivery building not found" });
+      }
+      res.json({ message: "Delivery building deleted successfully" });
+    } catch (error: any) {
+      res.status(400).json({ message: "Error deleting delivery building: " + error.message });
     }
   });
 

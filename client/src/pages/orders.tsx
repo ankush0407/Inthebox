@@ -123,6 +123,11 @@ export default function Orders() {
                           <p className="text-muted-foreground" data-testid={`order-address-${order.id}`}>
                             {order.deliveryLocation}
                           </p>
+                          {(order as any).deliveryBuildingId && (
+                            <p className="text-sm text-muted-foreground mt-1" data-testid={`order-building-${order.id}`}>
+                              Building: {(order as any).deliveryBuilding?.name || 'N/A'}
+                            </p>
+                          )}
                         </div>
                         {(order as any).deliveryDay && (
                           <div>

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Restaurant, User, DeliveryLocation, insertRestaurantSchema, insertDeliveryLocationSchema } from "@shared/schema";
+import { Restaurant, User, DeliveryLocation, DeliveryBuilding, insertRestaurantSchema, insertDeliveryLocationSchema, insertDeliveryBuildingSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -16,11 +16,12 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
-import { ArrowLeft, Plus, Store, Users, TrendingUp, LogOut, MapPin, Edit, Trash2 } from "lucide-react";
+import { ArrowLeft, Plus, Store, Users, TrendingUp, LogOut, MapPin, Edit, Trash2, Building2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const restaurantFormSchema = insertRestaurantSchema;
 const deliveryLocationFormSchema = insertDeliveryLocationSchema;
+const deliveryBuildingFormSchema = insertDeliveryBuildingSchema;
 
 export default function AdminPanel() {
   const [, setLocation] = useLocation();
@@ -32,6 +33,8 @@ export default function AdminPanel() {
   const [editingRestaurant, setEditingRestaurant] = useState<Restaurant | null>(null);
   const [isLocationDialogOpen, setIsLocationDialogOpen] = useState(false);
   const [editingLocation, setEditingLocation] = useState<DeliveryLocation | null>(null);
+  const [isBuildingDialogOpen, setIsBuildingDialogOpen] = useState(false);
+  const [editingBuilding, setEditingBuilding] = useState<DeliveryBuilding | null>(null);
 
   // Redirect non-admins
   if (user && user.role !== "admin") {
@@ -45,6 +48,10 @@ export default function AdminPanel() {
 
   const { data: deliveryLocations, isLoading: locationsLoading } = useQuery<DeliveryLocation[]>({
     queryKey: ["/api/delivery-locations/all"],
+  });
+
+  const { data: deliveryBuildings, isLoading: buildingsLoading } = useQuery<DeliveryBuilding[]>({
+    queryKey: ["/api/delivery-buildings/all"],
   });
 
   const form = useForm({
@@ -67,6 +74,16 @@ export default function AdminPanel() {
     defaultValues: {
       name: "",
       address: "",
+      isActive: true,
+    },
+  });
+
+  const buildingForm = useForm({
+    resolver: zodResolver(deliveryBuildingFormSchema),
+    defaultValues: {
+      name: "",
+      address: "",
+      deliveryLocationId: "",
       isActive: true,
     },
   });
@@ -208,6 +225,75 @@ export default function AdminPanel() {
     },
   });
 
+  const addBuildingMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("POST", "/api/delivery-buildings", data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-buildings/all"] });
+      setIsBuildingDialogOpen(false);
+      buildingForm.reset();
+      setEditingBuilding(null);
+      toast({
+        title: "Success",
+        description: "Delivery building added successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const updateBuildingMutation = useMutation({
+    mutationFn: async (data: any) => {
+      const res = await apiRequest("PUT", `/api/delivery-buildings/${editingBuilding?.id}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-buildings/all"] });
+      setIsBuildingDialogOpen(false);
+      buildingForm.reset();
+      setEditingBuilding(null);
+      toast({
+        title: "Success",
+        description: "Delivery building updated successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
+  const deleteBuildingMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const res = await apiRequest("DELETE", `/api/delivery-buildings/${id}`);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/delivery-buildings/all"] });
+      toast({
+        title: "Success",
+        description: "Delivery building deleted successfully",
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Error",
+        description: error.message,
+        variant: "destructive",
+      });
+    },
+  });
+
   const onSubmit = (data: any) => {
     if (editingRestaurant) {
       updateRestaurantMutation.mutate(data);
@@ -263,6 +349,31 @@ export default function AdminPanel() {
         id: restaurant.id,
         isActive: !restaurant.isActive,
       });
+    }
+  };
+
+  const onBuildingSubmit = (data: any) => {
+    if (editingBuilding) {
+      updateBuildingMutation.mutate(data);
+    } else {
+      addBuildingMutation.mutate(data);
+    }
+  };
+
+  const handleEditBuilding = (building: DeliveryBuilding) => {
+    setEditingBuilding(building);
+    buildingForm.reset({
+      name: building.name,
+      address: building.address,
+      deliveryLocationId: building.deliveryLocationId,
+      isActive: building.isActive ?? true,
+    });
+    setIsBuildingDialogOpen(true);
+  };
+
+  const handleDeleteBuilding = (id: string) => {
+    if (confirm("Are you sure you want to delete this delivery building?")) {
+      deleteBuildingMutation.mutate(id);
     }
   };
 
@@ -817,6 +928,181 @@ export default function AdminPanel() {
                           <p className="text-muted-foreground">No delivery locations configured</p>
                           <p className="text-sm text-muted-foreground">Add locations to enable restaurant onboarding</p>
                         </div>
+                      </TableCell>
+                    </TableRow>
+                  )}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Delivery Building Management Table */}
+        <Card className="mt-8">
+          <CardHeader>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Delivery Buildings</CardTitle>
+                <CardDescription>Manage delivery buildings mapped to locations</CardDescription>
+              </div>
+              <Dialog open={isBuildingDialogOpen} onOpenChange={setIsBuildingDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button onClick={() => { setEditingBuilding(null); buildingForm.reset(); }}>
+                    <Plus className="w-4 h-4 mr-2" />
+                    Add Building
+                  </Button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>{editingBuilding ? "Edit Delivery Building" : "Add Delivery Building"}</DialogTitle>
+                    <DialogDescription>
+                      {editingBuilding ? "Update" : "Create a new"} delivery building mapped to a location
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...buildingForm}>
+                    <form onSubmit={buildingForm.handleSubmit(onBuildingSubmit)} className="space-y-4">
+                      <FormField
+                        control={buildingForm.control}
+                        name="name"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Building Name</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Amazon Dawson" {...field} data-testid="input-building-name" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={buildingForm.control}
+                        name="address"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Building Address</FormLabel>
+                            <FormControl>
+                              <Input placeholder="Building address" {...field} data-testid="input-building-address" />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={buildingForm.control}
+                        name="deliveryLocationId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Delivery Location</FormLabel>
+                            <Select onValueChange={field.onChange} value={field.value}>
+                              <FormControl>
+                                <SelectTrigger data-testid="select-building-location">
+                                  <SelectValue placeholder="Select delivery location" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {deliveryLocations?.map(location => (
+                                  <SelectItem key={location.id} value={location.id}>
+                                    {location.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="flex justify-end space-x-2">
+                        <Button 
+                          type="submit" 
+                          disabled={addBuildingMutation.isPending || updateBuildingMutation.isPending} 
+                          data-testid="button-submit-building"
+                        >
+                          {editingBuilding ? "Update Building" : "Add Building"}
+                        </Button>
+                        <Button 
+                          type="button" 
+                          variant="outline" 
+                          onClick={() => {
+                            setIsBuildingDialogOpen(false);
+                            setEditingBuilding(null);
+                          }}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {buildingsLoading ? (
+              <div className="space-y-4">
+                {[...Array(3)].map((_, i) => (
+                  <Skeleton key={i} className="h-16 w-full" />
+                ))}
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Building Name</TableHead>
+                    <TableHead>Address</TableHead>
+                    <TableHead>Delivery Location</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {deliveryBuildings?.map(building => {
+                    const location = deliveryLocations?.find(l => l.id === building.deliveryLocationId);
+                    return (
+                      <TableRow key={building.id} data-testid={`building-row-${building.id}`}>
+                        <TableCell>
+                          <div className="flex items-center space-x-3">
+                            <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                              <Building2 className="w-5 h-5 text-muted-foreground" />
+                            </div>
+                            <p className="font-medium text-card-foreground">{building.name}</p>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{building.address}</TableCell>
+                        <TableCell className="text-sm text-muted-foreground">{location?.name || "N/A"}</TableCell>
+                        <TableCell>
+                          <Badge variant={building.isActive ? "default" : "secondary"}>
+                            {building.isActive ? "Active" : "Inactive"}
+                          </Badge>
+                        </TableCell>
+                        <TableCell className="text-right">
+                          <div className="flex items-center justify-end space-x-2">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleEditBuilding(building)}
+                              data-testid={`button-edit-building-${building.id}`}
+                            >
+                              <Edit className="w-4 h-4" />
+                            </Button>
+                            <Button 
+                              variant="destructive" 
+                              size="sm"
+                              onClick={() => handleDeleteBuilding(building.id)}
+                              disabled={deleteBuildingMutation.isPending}
+                              data-testid={`button-delete-building-${building.id}`}
+                            >
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
+                  {deliveryBuildings?.length === 0 && (
+                    <TableRow>
+                      <TableCell colSpan={5} className="text-center py-8">
+                        <Building2 className="w-8 h-8 text-muted-foreground mx-auto mb-2" />
+                        <p className="text-muted-foreground">No delivery buildings configured</p>
                       </TableCell>
                     </TableRow>
                   )}

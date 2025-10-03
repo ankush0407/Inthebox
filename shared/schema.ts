@@ -16,7 +16,6 @@ export const users = pgTable("users", {
   providerId: text("provider_id"),
   role: userRoleEnum("role").notNull().default("customer"),
   profileComplete: boolean("profile_complete").default(true),
-  // Profile fields
   fullName: text("full_name"),
   phoneNumber: text("phone_number"),
   deliveryLocationId: text("delivery_location_id"),
@@ -48,6 +47,7 @@ export const lunchboxes = pgTable("lunchboxes", {
   dietaryTags: text("dietary_tags").array(),
   availableDays: text("available_days").array().default(sql`'{monday,tuesday,wednesday,thursday,friday}'`),
   restaurantId: varchar("restaurant_id").references(() => restaurants.id),
+  deliveryBuildingId: varchar("delivery_building_id").references(() => deliveryBuildings.id),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -63,6 +63,7 @@ export const orders = pgTable("orders", {
   tax: decimal("tax", { precision: 10, scale: 2 }).notNull(),
   total: decimal("total", { precision: 10, scale: 2 }).notNull(),
   deliveryLocation: text("delivery_location").notNull(),
+  deliveryBuildingId: varchar("delivery_building_id").references(() => deliveryBuildings.id),
   deliveryDay: text("delivery_day").notNull(),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -79,6 +80,15 @@ export const deliveryLocations = pgTable("delivery_locations", {
   id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
   name: text("name").notNull(),
   address: text("address").notNull(),
+  isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const deliveryBuildings = pgTable("delivery_buildings", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  name: text("name").notNull(),
+  address: text("address").notNull(),
+  deliveryLocationId: varchar("delivery_location_id").references(() => deliveryLocations.id).notNull(),
   isActive: boolean("is_active").default(true),
   createdAt: timestamp("created_at").defaultNow(),
 });
@@ -114,6 +124,10 @@ export const lunchboxesRelations = relations(lunchboxes, ({ one, many }) => ({
     fields: [lunchboxes.restaurantId],
     references: [restaurants.id],
   }),
+  deliveryBuilding: one(deliveryBuildings, {
+    fields: [lunchboxes.deliveryBuildingId],
+    references: [deliveryBuildings.id],
+  }),
   orderItems: many(orderItems),
 }));
 
@@ -125,6 +139,10 @@ export const ordersRelations = relations(orders, ({ one, many }) => ({
   restaurant: one(restaurants, {
     fields: [orders.restaurantId],
     references: [restaurants.id],
+  }),
+  deliveryBuilding: one(deliveryBuildings, {
+    fields: [orders.deliveryBuildingId],
+    references: [deliveryBuildings.id],
   }),
   items: many(orderItems),
 }));
@@ -142,6 +160,16 @@ export const orderItemsRelations = relations(orderItems, ({ one }) => ({
 
 export const deliveryLocationsRelations = relations(deliveryLocations, ({ many }) => ({
   users: many(users),
+  deliveryBuildings: many(deliveryBuildings),
+}));
+
+export const deliveryBuildingsRelations = relations(deliveryBuildings, ({ one, many }) => ({
+  deliveryLocation: one(deliveryLocations, {
+    fields: [deliveryBuildings.deliveryLocationId],
+    references: [deliveryLocations.id],
+  }),
+  lunchboxes: many(lunchboxes),
+  orders: many(orders),
 }));
 
 // Insert schemas
@@ -174,6 +202,11 @@ export const insertDeliveryLocationSchema = createInsertSchema(deliveryLocations
   createdAt: true,
 });
 
+export const insertDeliveryBuildingSchema = createInsertSchema(deliveryBuildings).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -187,3 +220,5 @@ export type OrderItem = typeof orderItems.$inferSelect;
 export type InsertOrderItem = z.infer<typeof insertOrderItemSchema>;
 export type DeliveryLocation = typeof deliveryLocations.$inferSelect;
 export type InsertDeliveryLocation = z.infer<typeof insertDeliveryLocationSchema>;
+export type DeliveryBuilding = typeof deliveryBuildings.$inferSelect;
+export type InsertDeliveryBuilding = z.infer<typeof insertDeliveryBuildingSchema>;

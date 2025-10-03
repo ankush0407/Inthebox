@@ -1,11 +1,12 @@
 import { 
-  users, restaurants, lunchboxes, orders, orderItems, deliveryLocations,
+  users, restaurants, lunchboxes, orders, orderItems, deliveryLocations, deliveryBuildings,
   type User, type InsertUser,
   type Restaurant, type InsertRestaurant,
   type Lunchbox, type InsertLunchbox,
   type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem,
-  type DeliveryLocation, type InsertDeliveryLocation
+  type DeliveryLocation, type InsertDeliveryLocation,
+  type DeliveryBuilding, type InsertDeliveryBuilding
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -26,31 +27,37 @@ export interface IStorage {
   completeProfile(userId: string, role: string): Promise<User>;
   updateUserProfile(userId: string, profile: { fullName?: string; phoneNumber?: string; deliveryLocationId?: string }): Promise<User>;
   
-  // Delivery location operations
   getDeliveryLocations(): Promise<DeliveryLocation[]>;
+  getAllDeliveryLocations(): Promise<DeliveryLocation[]>;
+  createDeliveryLocation(data: { name: string; address: string }): Promise<DeliveryLocation>;
+  updateDeliveryLocation(id: string, data: { name?: string; address?: string; isActive?: boolean }): Promise<DeliveryLocation | null>;
+  deleteDeliveryLocation(id: string): Promise<boolean>;
   
-  // Restaurant operations
+  getDeliveryBuildings(): Promise<DeliveryBuilding[]>;
+  getAllDeliveryBuildings(): Promise<DeliveryBuilding[]>;
+  getDeliveryBuildingsByLocation(locationId: string): Promise<DeliveryBuilding[]>;
+  createDeliveryBuilding(data: InsertDeliveryBuilding): Promise<DeliveryBuilding>;
+  updateDeliveryBuilding(id: string, data: Partial<InsertDeliveryBuilding>): Promise<DeliveryBuilding | null>;
+  deleteDeliveryBuilding(id: string): Promise<boolean>;
+  
   getRestaurants(): Promise<Restaurant[]>;
   getRestaurant(id: string): Promise<Restaurant | undefined>;
   getRestaurantByOwnerId(ownerId: string): Promise<Restaurant | undefined>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   updateRestaurant(id: string, updates: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
   
-  // Lunchbox operations
   getLunchboxesByRestaurant(restaurantId: string): Promise<Lunchbox[]>;
   getLunchbox(id: string): Promise<Lunchbox | undefined>;
   createLunchbox(lunchbox: InsertLunchbox): Promise<Lunchbox>;
   updateLunchbox(id: string, updates: Partial<InsertLunchbox>): Promise<Lunchbox | undefined>;
   deleteLunchbox(id: string): Promise<boolean>;
   
-  // Order operations
   createOrder(order: InsertOrder): Promise<Order>;
   getOrder(id: string): Promise<Order | undefined>;
   getOrdersByCustomer(customerId: string): Promise<Order[]>;
   getOrdersByRestaurant(restaurantId: string): Promise<Order[]>;
   updateOrderStatus(id: string, status: string): Promise<Order | undefined>;
   
-  // Order item operations
   createOrderItem(orderItem: InsertOrderItem): Promise<OrderItem>;
   getOrderItems(orderId: string): Promise<OrderItem[]>;
   
@@ -313,9 +320,7 @@ export class DatabaseStorage implements IStorage {
   async updateDeliveryLocation(id: string, data: { name?: string; address?: string; isActive?: boolean }): Promise<DeliveryLocation | null> {
     return withRetry(async () => {
       const [location] = await db.update(deliveryLocations)
-        .set({
-          ...data,
-        })
+        .set(data)
         .where(eq(deliveryLocations.id, id))
         .returning();
       return location || null;
@@ -325,7 +330,50 @@ export class DatabaseStorage implements IStorage {
   async deleteDeliveryLocation(id: string): Promise<boolean> {
     return withRetry(async () => {
       const result = await db.delete(deliveryLocations).where(eq(deliveryLocations.id, id));
-      return (result.rowCount ?? 0) > 0;
+      return (result.rowCount || 0) > 0;
+    });
+  }
+
+  async getDeliveryBuildings(): Promise<DeliveryBuilding[]> {
+    return withRetry(async () => {
+      return await db.select().from(deliveryBuildings).where(eq(deliveryBuildings.isActive, true));
+    });
+  }
+
+  async getAllDeliveryBuildings(): Promise<DeliveryBuilding[]> {
+    return withRetry(async () => {
+      return await db.select().from(deliveryBuildings);
+    });
+  }
+
+  async getDeliveryBuildingsByLocation(locationId: string): Promise<DeliveryBuilding[]> {
+    return withRetry(async () => {
+      return await db.select().from(deliveryBuildings)
+        .where(and(eq(deliveryBuildings.deliveryLocationId, locationId), eq(deliveryBuildings.isActive, true)));
+    });
+  }
+
+  async createDeliveryBuilding(data: InsertDeliveryBuilding): Promise<DeliveryBuilding> {
+    return withRetry(async () => {
+      const [building] = await db.insert(deliveryBuildings).values(data).returning();
+      return building;
+    });
+  }
+
+  async updateDeliveryBuilding(id: string, data: Partial<InsertDeliveryBuilding>): Promise<DeliveryBuilding | null> {
+    return withRetry(async () => {
+      const [building] = await db.update(deliveryBuildings)
+        .set(data)
+        .where(eq(deliveryBuildings.id, id))
+        .returning();
+      return building || null;
+    });
+  }
+
+  async deleteDeliveryBuilding(id: string): Promise<boolean> {
+    return withRetry(async () => {
+      const result = await db.delete(deliveryBuildings).where(eq(deliveryBuildings.id, id));
+      return (result.rowCount || 0) > 0;
     });
   }
 }

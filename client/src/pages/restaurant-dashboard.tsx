@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { Restaurant, Lunchbox, Order, insertLunchboxSchema } from "@shared/schema";
+import { Restaurant, Lunchbox, Order, DeliveryBuilding, insertLunchboxSchema } from "@shared/schema";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -54,6 +54,16 @@ export default function RestaurantDashboard() {
     enabled: !!restaurant,
   });
 
+  const { data: deliveryBuildings } = useQuery<DeliveryBuilding[]>({
+    queryKey: ["/api/delivery-buildings", "location", restaurant?.deliveryLocationId],
+    queryFn: async () => {
+      if (!restaurant?.deliveryLocationId) return [];
+      const res = await apiRequest("GET", `/api/delivery-buildings/location/${restaurant.deliveryLocationId}`);
+      return res.json();
+    },
+    enabled: !!restaurant?.deliveryLocationId,
+  });
+
   const form = useForm({
     resolver: zodResolver(lunchboxFormSchema),
     defaultValues: {
@@ -64,6 +74,7 @@ export default function RestaurantDashboard() {
       isAvailable: true,
       dietaryTags: [],
       availableDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      deliveryBuildingId: "",
     },
   });
 
@@ -517,6 +528,30 @@ export default function RestaurantDashboard() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="deliveryBuildingId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Delivery Building</FormLabel>
+                                <Select onValueChange={field.onChange} value={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger data-testid="select-delivery-building">
+                                      <SelectValue placeholder="Select delivery building" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {deliveryBuildings?.map(building => (
+                                      <SelectItem key={building.id} value={building.id}>
+                                        {building.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                           <div className="flex justify-end space-x-2">
                             <Button type="button" variant="outline" onClick={() => {
                               setIsAddDialogOpen(false);
@@ -811,6 +846,30 @@ export default function RestaurantDashboard() {
                           );
                         })}
                       </div>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="deliveryBuildingId"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Delivery Building</FormLabel>
+                      <Select onValueChange={field.onChange} value={field.value}>
+                        <FormControl>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select delivery building" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          {deliveryBuildings?.map(building => (
+                            <SelectItem key={building.id} value={building.id}>
+                              {building.name}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       <FormMessage />
                     </FormItem>
                   )}

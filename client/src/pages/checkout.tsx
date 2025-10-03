@@ -3,7 +3,7 @@ import { useLocationContext } from "@/contexts/location-context";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient, useQuery } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
@@ -13,9 +13,10 @@ import { Badge } from "@/components/ui/badge";
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { isProfileComplete, getProfileCompletionMessage } from "@/lib/profile-utils";
-import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock, User } from "lucide-react";
+import { ArrowLeft, CreditCard, MapPin, ShoppingBag, Calendar, Clock, User, Building2 } from "lucide-react";
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements, PaymentElement, useStripe, useElements } from '@stripe/react-stripe-js';
+import { DeliveryBuilding, DeliveryLocation } from "@shared/schema";
 
 // Initialize Stripe
 if (!import.meta.env.VITE_STRIPE_PUBLIC_KEY) {
@@ -116,7 +117,24 @@ export default function Checkout() {
   const queryClient = useQueryClient();
   const { selectedLocation } = useLocationContext();
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("");
+  const [selectedDeliveryBuilding, setSelectedDeliveryBuilding] = useState("");
   const [clientSecret, setClientSecret] = useState("");
+
+  const { data: deliveryLocations } = useQuery<DeliveryLocation[]>({
+    queryKey: ["/api/delivery-locations"],
+  });
+
+  const userDeliveryLocation = deliveryLocations?.find(loc => loc.name === selectedLocation);
+
+  const { data: deliveryBuildings } = useQuery<DeliveryBuilding[]>({
+    queryKey: ["/api/delivery-buildings", "location", userDeliveryLocation?.id],
+    queryFn: async () => {
+      if (!userDeliveryLocation?.id) return [];
+      const res = await apiRequest("GET", `/api/delivery-buildings/location/${userDeliveryLocation.id}`);
+      return res.json();
+    },
+    enabled: !!userDeliveryLocation?.id,
+  });
 
   // Redirect if cart is empty
   if (items.length === 0) {
@@ -248,6 +266,7 @@ export default function Checkout() {
       tax: tax.toFixed(2),
       total: total.toFixed(2),
       deliveryLocation: selectedLocation,
+      deliveryBuildingId: selectedDeliveryBuilding,
       deliveryDay: selectedDeliveryDay,
       items: firstRestaurantItems.map(item => ({
         lunchboxId: item.lunchbox.id,
@@ -309,6 +328,22 @@ export default function Checkout() {
                     <div className="mt-2 p-3 bg-muted rounded-lg">
                       <span className="font-medium text-foreground">{selectedLocation}</span>
                     </div>
+                  </div>
+                  <div>
+                    <Label htmlFor="delivery-building">Delivery Building</Label>
+                    <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
+                      <SelectTrigger className="mt-2" data-testid="select-delivery-building">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="Select delivery building" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {deliveryBuildings?.map(building => (
+                          <SelectItem key={building.id} value={building.id}>
+                            {building.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                   </div>
                   <div>
                     <Label htmlFor="delivery-day">Delivery Day</Label>

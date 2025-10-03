@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Restaurant, Lunchbox } from "@shared/schema";
+import { Restaurant, Lunchbox, DeliveryBuilding, DeliveryLocation } from "@shared/schema";
 import { useLocationContext } from "@/contexts/location-context";
 import Header from "@/components/layout/header";
 import ShoppingCart from "@/components/layout/shopping-cart";
@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { MapPin, Filter, SortAsc, Calendar } from "lucide-react";
+import { MapPin, Filter, SortAsc, Calendar, Building2 } from "lucide-react";
 import { apiRequest } from "@/lib/queryClient";
 
 const locations = ["Amazon SLU", "Amazon Bellevue", "Amazon Redmond"];
@@ -29,15 +29,28 @@ export default function HomePage() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [selectedCuisine, setSelectedCuisine] = useState("All");
   const [selectedDeliveryDay, setSelectedDeliveryDay] = useState("all");
+  const [selectedDeliveryBuilding, setSelectedDeliveryBuilding] = useState<string>("all");
   const [sortBy, setSortBy] = useState("featured");
 
   // Fetch delivery locations
-  const { data: deliveryLocations } = useQuery({
+  const { data: deliveryLocations } = useQuery<DeliveryLocation[]>({
     queryKey: ["/api/delivery-locations"],
     queryFn: async () => {
       const res = await apiRequest("GET", "/api/delivery-locations");
       return await res.json();
     },
+  });
+
+  const userDeliveryLocation = deliveryLocations?.find(loc => loc.name === selectedLocation);
+
+  const { data: deliveryBuildings } = useQuery<DeliveryBuilding[]>({
+    queryKey: ["/api/delivery-buildings", "location", userDeliveryLocation?.id],
+    queryFn: async () => {
+      if (!userDeliveryLocation?.id) return [];
+      const res = await apiRequest("GET", `/api/delivery-buildings/location/${userDeliveryLocation.id}`);
+      return res.json();
+    },
+    enabled: !!userDeliveryLocation?.id,
   });
 
   const { data: restaurants, isLoading: restaurantsLoading } = useQuery<Restaurant[]>({
@@ -84,6 +97,14 @@ export default function HomePage() {
       // Filter by delivery location - if restaurant has no location set, show it for all locations
       const locationMatch = !restaurant.deliveryLocationId || restaurant.deliveryLocationId === selectedLocationId;
       
+      // Filter by delivery building - only show restaurants that have lunchboxes available for the selected building
+      const buildingMatch = selectedDeliveryBuilding === "all" || (() => {
+        const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
+        return restaurantLunchboxes.some(lunchbox => 
+          lunchbox.deliveryBuildingId === selectedDeliveryBuilding
+        );
+      })();
+      
       // Filter by day availability - only show restaurants that have lunchboxes available for the selected day
       const dayMatch = selectedDeliveryDay === "all" || (() => {
         const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
@@ -92,7 +113,7 @@ export default function HomePage() {
         );
       })();
       
-      return cuisineMatch && locationMatch && dayMatch;
+      return cuisineMatch && locationMatch && buildingMatch && dayMatch;
     }) || [];
 
     // Sort restaurants based on selected sort option
@@ -180,6 +201,20 @@ export default function HomePage() {
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-lg font-semibold text-foreground">Filters</h3>
                   <div className="flex items-center space-x-4">
+                    <Select value={selectedDeliveryBuilding} onValueChange={setSelectedDeliveryBuilding}>
+                      <SelectTrigger className="w-[180px]" data-testid="select-delivery-building">
+                        <Building2 className="w-4 h-4 mr-2" />
+                        <SelectValue placeholder="All Buildings" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Buildings</SelectItem>
+                        {deliveryBuildings?.map(building => (
+                          <SelectItem key={building.id} value={building.id}>
+                            {building.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
                     <Select value={selectedDeliveryDay} onValueChange={setSelectedDeliveryDay}>
                       <SelectTrigger className="w-[180px]" data-testid="select-delivery-day">
                         <Calendar className="w-4 h-4 mr-2" />

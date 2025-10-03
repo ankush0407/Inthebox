@@ -73,6 +73,7 @@ export default function RestaurantOrders() {
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [deliveryLocationFilter, setDeliveryLocationFilter] = useState<string>("all");
+  const [deliveryBuildingFilter, setDeliveryBuildingFilter] = useState<string>("all");
   const [deliveryDayFilter, setDeliveryDayFilter] = useState<string>("all");
   const [menuItemFilter, setMenuItemFilter] = useState<string>("all");
   const [dateFromFilter, setDateFromFilter] = useState<string>("");
@@ -88,6 +89,10 @@ export default function RestaurantOrders() {
 
   const { data: deliveryLocations } = useQuery({
     queryKey: ["/api/delivery-locations"],
+  });
+
+  const { data: deliveryBuildings } = useQuery({
+    queryKey: ["/api/delivery-buildings"],
   });
 
   // Get unique menu items for filter
@@ -123,6 +128,11 @@ export default function RestaurantOrders() {
 
       // Delivery location filter
       if (deliveryLocationFilter !== "all" && order.deliveryLocation !== deliveryLocationFilter) {
+        return false;
+      }
+
+      // Delivery building filter
+      if (deliveryBuildingFilter !== "all" && (order as any).deliveryBuildingId !== deliveryBuildingFilter) {
         return false;
       }
 
@@ -372,6 +382,24 @@ export default function RestaurantOrders() {
                       {Array.isArray(deliveryLocations) && deliveryLocations.map((location: any) => (
                         <SelectItem key={location.id} value={location.name}>
                           {location.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Delivery Building Filter */}
+                <div>
+                  <Label htmlFor="building-filter">Delivery Building</Label>
+                  <Select value={deliveryBuildingFilter} onValueChange={setDeliveryBuildingFilter} data-testid="select-building-filter">
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Buildings</SelectItem>
+                      {Array.isArray(deliveryBuildings) && deliveryBuildings.map((building: any) => (
+                        <SelectItem key={building.id} value={building.id}>
+                          {building.name}
                         </SelectItem>
                       ))}
                     </SelectContent>
