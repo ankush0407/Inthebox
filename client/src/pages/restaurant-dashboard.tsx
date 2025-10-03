@@ -74,7 +74,7 @@ export default function RestaurantDashboard() {
       isAvailable: true,
       dietaryTags: [],
       availableDays: ["monday", "tuesday", "wednesday", "thursday", "friday"],
-      deliveryBuildingId: "",
+      deliveryBuildingIds: [],
     },
   });
 
@@ -187,6 +187,7 @@ export default function RestaurantDashboard() {
       isAvailable: lunchbox.isAvailable ?? true,
       dietaryTags: lunchbox.dietaryTags || [],
       availableDays: (lunchbox.availableDays as string[]) || ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      deliveryBuildingIds: (lunchbox.deliveryBuildingIds as string[]) || [],
     });
     setIsEditDialogOpen(true);
   };
@@ -530,24 +531,31 @@ export default function RestaurantDashboard() {
                           />
                           <FormField
                             control={form.control}
-                            name="deliveryBuildingId"
+                            name="deliveryBuildingIds"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Delivery Building</FormLabel>
-                                <Select onValueChange={field.onChange} value={field.value}>
-                                  <FormControl>
-                                    <SelectTrigger data-testid="select-delivery-building">
-                                      <SelectValue placeholder="Select delivery building" />
-                                    </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
-                                    {deliveryBuildings?.map(building => (
-                                      <SelectItem key={building.id} value={building.id}>
+                                <FormLabel>Delivery Buildings</FormLabel>
+                                <div className="grid grid-cols-1 gap-2 mt-2">
+                                  {deliveryBuildings?.map((building) => (
+                                    <div key={building.id} className="flex items-center space-x-2">
+                                      <Checkbox
+                                        checked={field.value?.includes(building.id)}
+                                        onCheckedChange={(checked) => {
+                                          const current = field.value || [];
+                                          if (checked) {
+                                            field.onChange([...current, building.id]);
+                                          } else {
+                                            field.onChange(current.filter((id: string) => id !== building.id));
+                                          }
+                                        }}
+                                        data-testid={`checkbox-building-${building.id}`}
+                                      />
+                                      <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                                         {building.name}
-                                      </SelectItem>
-                                    ))}
-                                  </SelectContent>
-                                </Select>
+                                      </label>
+                                    </div>
+                                  ))}
+                                </div>
                                 <FormMessage />
                               </FormItem>
                             )}
@@ -852,24 +860,31 @@ export default function RestaurantDashboard() {
                 />
                 <FormField
                   control={form.control}
-                  name="deliveryBuildingId"
+                  name="deliveryBuildingIds"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel>Delivery Building</FormLabel>
-                      <Select onValueChange={field.onChange} value={field.value}>
-                        <FormControl>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select delivery building" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          {deliveryBuildings?.map(building => (
-                            <SelectItem key={building.id} value={building.id}>
+                      <FormLabel>Delivery Buildings</FormLabel>
+                      <div className="grid grid-cols-1 gap-2 mt-2">
+                        {deliveryBuildings?.map((building) => (
+                          <div key={building.id} className="flex items-center space-x-2">
+                            <Checkbox
+                              checked={field.value?.includes(building.id)}
+                              onCheckedChange={(checked) => {
+                                const current = field.value || [];
+                                if (checked) {
+                                  field.onChange([...current, building.id]);
+                                } else {
+                                  field.onChange(current.filter((id: string) => id !== building.id));
+                                }
+                              }}
+                              data-testid={`checkbox-edit-building-${building.id}`}
+                            />
+                            <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
                               {building.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                            </label>
+                          </div>
+                        ))}
+                      </div>
                       <FormMessage />
                     </FormItem>
                   )}
