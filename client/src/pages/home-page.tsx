@@ -101,7 +101,7 @@ export default function HomePage() {
       const buildingMatch = selectedDeliveryBuilding === "all" || (() => {
         const restaurantLunchboxes = allLunchboxes?.[restaurant.id] || [];
         return restaurantLunchboxes.some(lunchbox => 
-          lunchbox.deliveryBuildingId === selectedDeliveryBuilding
+          lunchbox.deliveryBuildingIds?.includes(selectedDeliveryBuilding)
         );
       })();
       
