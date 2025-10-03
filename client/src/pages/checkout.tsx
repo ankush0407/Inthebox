@@ -126,7 +126,7 @@ export default function Checkout() {
 
   const userDeliveryLocation = deliveryLocations?.find(loc => loc.name === selectedLocation);
 
-  const { data: deliveryBuildings } = useQuery<DeliveryBuilding[]>({
+  const { data: allDeliveryBuildings } = useQuery<DeliveryBuilding[]>({
     queryKey: ["/api/delivery-buildings", "location", userDeliveryLocation?.id],
     queryFn: async () => {
       if (!userDeliveryLocation?.id) return [];
@@ -135,6 +135,12 @@ export default function Checkout() {
     },
     enabled: !!userDeliveryLocation?.id,
   });
+
+  const deliveryBuildings = allDeliveryBuildings?.filter(building => {
+    return items.every(item => 
+      item.lunchbox.deliveryBuildingIds?.includes(building.id)
+    );
+  }) || [];
 
   // Redirect if cart is empty
   if (items.length === 0) {

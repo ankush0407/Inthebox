@@ -20,8 +20,13 @@ import { ArrowLeft, Plus, Edit, Trash2, ShoppingBag, DollarSign, Star, Utensils,
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Skeleton } from "@/components/ui/skeleton";
+import { z } from "zod";
 
-const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true });
+const lunchboxFormSchema = insertLunchboxSchema.omit({ restaurantId: true }).extend({
+  deliveryBuildingIds: z.array(z.string()).optional(),
+  dietaryTags: z.array(z.string()).optional(),
+  availableDays: z.array(z.string()).optional(),
+});
 
 export default function RestaurantDashboard() {
   const [, setLocation] = useLocation();
@@ -186,9 +191,9 @@ export default function RestaurantDashboard() {
       imageUrl: imageUrl,
       isAvailable: lunchbox.isAvailable ?? true,
       dietaryTags: lunchbox.dietaryTags || [],
-      availableDays: (lunchbox.availableDays as string[]) || ["monday", "tuesday", "wednesday", "thursday", "friday"],
-      deliveryBuildingIds: (lunchbox.deliveryBuildingIds as string[]) || [],
-    });
+      availableDays: lunchbox.availableDays || ["monday", "tuesday", "wednesday", "thursday", "friday"],
+      deliveryBuildingIds: lunchbox.deliveryBuildingIds || [],
+    } as any);
     setIsEditDialogOpen(true);
   };
 
@@ -539,9 +544,9 @@ export default function RestaurantDashboard() {
                                   {deliveryBuildings?.map((building) => (
                                     <div key={building.id} className="flex items-center space-x-2">
                                       <Checkbox
-                                        checked={field.value?.includes(building.id)}
+                                        checked={(field.value as string[] || []).includes(building.id)}
                                         onCheckedChange={(checked) => {
-                                          const current = field.value || [];
+                                          const current = (field.value as string[]) || [];
                                           if (checked) {
                                             field.onChange([...current, building.id]);
                                           } else {
@@ -868,9 +873,9 @@ export default function RestaurantDashboard() {
                         {deliveryBuildings?.map((building) => (
                           <div key={building.id} className="flex items-center space-x-2">
                             <Checkbox
-                              checked={field.value?.includes(building.id)}
+                              checked={(field.value as string[] || []).includes(building.id)}
                               onCheckedChange={(checked) => {
-                                const current = field.value || [];
+                                const current = (field.value as string[]) || [];
                                 if (checked) {
                                   field.onChange([...current, building.id]);
                                 } else {
