@@ -260,6 +260,31 @@ export default function Checkout() {
     setLocation("/orders");
   };
 
+  // Validate that all items are eligible for selected delivery day and building
+  const validateCheckout = () => {
+    if (!selectedDeliveryDay || !selectedDeliveryBuilding) {
+      return { valid: false, message: "Please select delivery day and building" };
+    }
+
+    const ineligibleItems = items.filter(item => {
+      const dayEligible = item.lunchbox.availableDays?.includes(selectedDeliveryDay);
+      const buildingEligible = item.lunchbox.deliveryBuildingIds?.includes(selectedDeliveryBuilding);
+      return !dayEligible || !buildingEligible;
+    });
+
+    if (ineligibleItems.length > 0) {
+      const itemNames = ineligibleItems.map(i => i.lunchbox.name).join(", ");
+      return { 
+        valid: false, 
+        message: `The following items are not available for selected delivery day/building: ${itemNames}. Please remove them from cart.` 
+      };
+    }
+
+    return { valid: true, message: "" };
+  };
+
+  const checkoutValidation = validateCheckout();
+
   const getOrderData = () => {
     const firstRestaurantItems = Object.values(itemsByRestaurant)[0];
     const restaurantId = firstRestaurantItems[0].lunchbox.restaurantId;
@@ -393,6 +418,12 @@ export default function Checkout() {
                   <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
                     <p className="text-sm text-yellow-800">
                       ⚠️ You have items from multiple restaurants. Please place separate orders for each restaurant.
+                    </p>
+                  </div>
+                ) : !checkoutValidation.valid ? (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-lg">
+                    <p className="text-sm text-red-800">
+                      ⚠️ {checkoutValidation.message}
                     </p>
                   </div>
                 ) : (

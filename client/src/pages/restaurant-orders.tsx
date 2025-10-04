@@ -115,11 +115,22 @@ export default function RestaurantOrders() {
     return Array.from(items).sort();
   }, [orders]);
 
+  // Flatten orders to show each item as separate row
+  const flattenedOrders = useMemo(() => {
+    if (!orders) return [];
+    
+    return orders.flatMap(order => 
+      order.items.map(item => ({
+        ...order,
+        currentItem: item,
+        itemId: item.id,
+      }))
+    );
+  }, [orders]);
+
   // Filter orders based on current filters
   const filteredOrders = useMemo(() => {
-    if (!orders) return [];
-
-    return orders.filter(order => {
+    return flattenedOrders.filter(order => {
       // Search query filter
       if (searchQuery && !order.customer?.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) &&
           !order.orderNumber?.toString().includes(searchQuery) &&
@@ -148,9 +159,8 @@ export default function RestaurantOrders() {
       }
 
       // Menu item filter
-      if (menuItemFilter !== "all") {
-        const hasMenuItem = order.items.some(item => item.lunchbox?.name === menuItemFilter);
-        if (!hasMenuItem) return false;
+      if (menuItemFilter !== "all" && order.currentItem.lunchbox?.name !== menuItemFilter) {
+        return false;
       }
 
       // Date range filter
@@ -162,7 +172,7 @@ export default function RestaurantOrders() {
 
       return true;
     });
-  }, [orders, searchQuery, statusFilter, deliveryLocationFilter, deliveryBuildingFilter, deliveryDayFilter, menuItemFilter, dateFromFilter, dateToFilter]);
+  }, [flattenedOrders, searchQuery, statusFilter, deliveryLocationFilter, deliveryBuildingFilter, deliveryDayFilter, menuItemFilter, dateFromFilter, dateToFilter]);
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
@@ -498,7 +508,7 @@ export default function RestaurantOrders() {
                           </TableHead>
                           <TableHead>Order #</TableHead>
                           <TableHead>Customer</TableHead>
-                          <TableHead>Items</TableHead>
+                          <TableHead>Item</TableHead>
                           <TableHead>Quantity</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Location</TableHead>
@@ -511,7 +521,7 @@ export default function RestaurantOrders() {
                       </TableHeader>
                       <TableBody>
                         {filteredOrders.map((order) => (
-                          <TableRow key={order.id} data-testid={`order-row-${order.id}`}>
+                          <TableRow key={order.itemId} data-testid={`order-row-${order.itemId}`}>
                             <TableCell>
                               <Checkbox
                                 checked={selectedOrders.has(order.id)}
@@ -528,30 +538,18 @@ export default function RestaurantOrders() {
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                {order.items.map((item) => (
-                                  <div key={item.id} className="text-sm font-medium">
-                                    {item.lunchbox?.name || "Item"}
-                                  </div>
-                                ))}
+                              <div className="text-sm font-medium">
+                                {order.currentItem.lunchbox?.name || "Item"}
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                {order.items.map((item) => (
-                                  <div key={item.id} className="text-sm">
-                                    {item.quantity}
-                                  </div>
-                                ))}
+                              <div className="text-sm">
+                                {order.currentItem.quantity}
                               </div>
                             </TableCell>
                             <TableCell>
-                              <div className="space-y-1">
-                                {order.items.map((item) => (
-                                  <div key={item.id} className="text-sm">
-                                    ${parseFloat(item.price).toFixed(2)}
-                                  </div>
-                                ))}
+                              <div className="text-sm">
+                                ${parseFloat(order.currentItem.price).toFixed(2)}
                               </div>
                             </TableCell>
                             <TableCell>{order.deliveryLocation}</TableCell>
