@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useAuth } from "@/hooks/use-auth";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
@@ -39,6 +39,7 @@ export default function RestaurantProfile() {
   const { toast } = useToast();
   const [isCreating, setIsCreating] = useState(false);
   const [logoUrl, setLogoUrl] = useState("");
+  const formInitialized = useRef(false);
 
   // Fetch restaurant data for the current user
   const { data: restaurant, isLoading: restaurantLoading } = useQuery<Restaurant>({
@@ -73,32 +74,36 @@ export default function RestaurantProfile() {
     },
   });
 
-  // Update form values when restaurant data loads
+  // Update form values when restaurant data loads (only once)
   useEffect(() => {
-    if (restaurant) {
-      form.reset({
-        name: restaurant.name || "",
-        description: restaurant.description || "",
-        cuisine: restaurant.cuisine || "",
-        imageUrl: restaurant.imageUrl || "",
-        deliveryFee: restaurant.deliveryFee || "",
-        deliveryLocationId: restaurant.deliveryLocationId || "",
-        ownerFullName: user?.fullName || "",
-        ownerPhoneNumber: user?.phoneNumber || "",
-      });
-      setLogoUrl(restaurant.imageUrl || "");
-    } else if (user && !restaurant) {
-      // Set owner information only when creating new restaurant (one-time)
-      const currentValues = form.getValues();
-      if (!currentValues.ownerFullName) {
+    if (!formInitialized.current) {
+      if (restaurant) {
         form.reset({
-          ...currentValues,
-          ownerFullName: user.fullName || "",
-          ownerPhoneNumber: user.phoneNumber || "",
+          name: restaurant.name || "",
+          description: restaurant.description || "",
+          cuisine: restaurant.cuisine || "",
+          imageUrl: restaurant.imageUrl || "",
+          deliveryFee: restaurant.deliveryFee || "",
+          deliveryLocationId: restaurant.deliveryLocationId || "",
+          ownerFullName: user?.fullName || "",
+          ownerPhoneNumber: user?.phoneNumber || "",
         });
+        setLogoUrl(restaurant.imageUrl || "");
+        formInitialized.current = true;
+      } else if (user && !restaurant) {
+        // Set owner information only when creating new restaurant (one-time)
+        const currentValues = form.getValues();
+        if (!currentValues.ownerFullName) {
+          form.reset({
+            ...currentValues,
+            ownerFullName: user.fullName || "",
+            ownerPhoneNumber: user.phoneNumber || "",
+          });
+          formInitialized.current = true;
+        }
       }
     }
-  }, [restaurant, user]);
+  }, [restaurant, user, form]);
 
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantProfileFormData) => {
