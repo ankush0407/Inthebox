@@ -306,11 +306,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
         orders = [];
       }
 
-      // Enhance orders with restaurant info, customer info and items
+      // Enhance orders with restaurant info, customer info, delivery building and items
       const enhancedOrders = await Promise.all(
         orders.map(async (order) => {
           const restaurant = order.restaurantId ? await storage.getRestaurant(order.restaurantId) : null;
           const customer = order.customerId ? await storage.getUser(order.customerId) : null;
+          const deliveryBuilding = order.deliveryBuildingId ? await storage.getDeliveryBuilding(order.deliveryBuildingId) : null;
           const orderItems = await storage.getOrderItems(order.id);
           
           // Get lunchbox details for each order item
@@ -328,6 +329,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
             ...order,
             restaurant: restaurant || null,
             customer: customer || null,
+            deliveryBuilding: deliveryBuilding || null,
             items: itemsWithDetails
           };
         })

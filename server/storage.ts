@@ -340,6 +340,13 @@ export class DatabaseStorage implements IStorage {
     });
   }
 
+  async getDeliveryBuilding(id: string): Promise<DeliveryBuilding | null> {
+    return withRetry(async () => {
+      const [building] = await db.select().from(deliveryBuildings).where(eq(deliveryBuildings.id, id));
+      return building || null;
+    });
+  }
+
   async getAllDeliveryBuildings(): Promise<DeliveryBuilding[]> {
     return withRetry(async () => {
       return await db.select().from(deliveryBuildings);

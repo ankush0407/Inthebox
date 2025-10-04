@@ -28,6 +28,12 @@ interface EnhancedOrder {
   total: string;
   status: "pending" | "confirmed" | "delivered" | "cancelled";
   deliveryLocation: string;
+  deliveryBuildingId?: string;
+  deliveryBuilding?: {
+    id: string;
+    name: string;
+    address: string;
+  };
   deliveryDay?: string;
   createdAt: string;
   customer?: {
@@ -132,7 +138,7 @@ export default function RestaurantOrders() {
       }
 
       // Delivery building filter
-      if (deliveryBuildingFilter !== "all" && (order as any).deliveryBuildingId !== deliveryBuildingFilter) {
+      if (deliveryBuildingFilter !== "all" && order.deliveryBuildingId !== deliveryBuildingFilter) {
         return false;
       }
 
@@ -231,6 +237,7 @@ export default function RestaurantOrders() {
     setSearchQuery("");
     setStatusFilter("all");
     setDeliveryLocationFilter("all");
+    setDeliveryBuildingFilter("all");
     setDeliveryDayFilter("all");
     setMenuItemFilter("all");
     setDateFromFilter("");
@@ -495,6 +502,7 @@ export default function RestaurantOrders() {
                           <TableHead>Quantity</TableHead>
                           <TableHead>Price</TableHead>
                           <TableHead>Location</TableHead>
+                          <TableHead>Building</TableHead>
                           <TableHead>Delivery Day</TableHead>
                           <TableHead>Status</TableHead>
                           <TableHead>Order Date</TableHead>
@@ -547,6 +555,7 @@ export default function RestaurantOrders() {
                               </div>
                             </TableCell>
                             <TableCell>{order.deliveryLocation}</TableCell>
+                            <TableCell>{order.deliveryBuilding?.name || "N/A"}</TableCell>
                             <TableCell className="capitalize">
                               {order.deliveryDay || "N/A"}
                             </TableCell>
