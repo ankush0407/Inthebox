@@ -162,7 +162,7 @@ export default function RestaurantOrders() {
 
       return true;
     });
-  }, [orders, searchQuery, statusFilter, deliveryLocationFilter, deliveryDayFilter, menuItemFilter, dateFromFilter, dateToFilter]);
+  }, [orders, searchQuery, statusFilter, deliveryLocationFilter, deliveryBuildingFilter, deliveryDayFilter, menuItemFilter, dateFromFilter, dateToFilter]);
 
   const updateOrderStatusMutation = useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
