@@ -54,10 +54,10 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
 
   return (
     <div 
-      className="flex items-center space-x-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
+      className="flex flex-col sm:flex-row items-start sm:items-center gap-3 sm:gap-4 p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors"
       data-testid={`lunchbox-card-${lunchbox.id}`}
     >
-      <div className="w-20 h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
+      <div className="w-full sm:w-20 h-40 sm:h-20 bg-muted rounded-lg flex items-center justify-center flex-shrink-0">
         {lunchbox.imageUrl ? (
           <img 
             src={lunchbox.imageUrl} 
@@ -69,61 +69,65 @@ export default function LunchboxCard({ lunchbox, restaurantName, restaurantDeliv
         )}
       </div>
       
-      <div className="flex-1">
-        <h4 className="font-semibold text-card-foreground" data-testid={`lunchbox-name-${lunchbox.id}`}>
-          {lunchbox.name}
-        </h4>
-        <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`lunchbox-description-${lunchbox.id}`}>
-          {lunchbox.description}
-        </p>
-        
-        <div className="space-y-2">
-          {lunchbox.dietaryTags && lunchbox.dietaryTags.length > 0 && (
-            <div className="flex items-center space-x-2 flex-wrap">
-              {lunchbox.dietaryTags.map(tag => (
-                <Badge 
-                  key={tag} 
-                  variant="outline" 
-                  className="text-xs bg-accent/10 text-accent border-accent/20"
-                  data-testid={`lunchbox-tag-${tag}-${lunchbox.id}`}
-                >
-                  {tag}
-                </Badge>
-              ))}
+      <div className="flex-1 w-full">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div className="flex-1">
+            <h4 className="font-semibold text-card-foreground" data-testid={`lunchbox-name-${lunchbox.id}`}>
+              {lunchbox.name}
+            </h4>
+            <p className="text-sm text-muted-foreground mb-2 line-clamp-2" data-testid={`lunchbox-description-${lunchbox.id}`}>
+              {lunchbox.description}
+            </p>
+            
+            <div className="space-y-2">
+              {lunchbox.dietaryTags && lunchbox.dietaryTags.length > 0 && (
+                <div className="flex items-center gap-2 flex-wrap">
+                  {lunchbox.dietaryTags.map(tag => (
+                    <Badge 
+                      key={tag} 
+                      variant="outline" 
+                      className="text-xs bg-accent/10 text-accent border-accent/20"
+                      data-testid={`lunchbox-tag-${tag}-${lunchbox.id}`}
+                    >
+                      {tag}
+                    </Badge>
+                  ))}
+                </div>
+              )}
+              
+              {lunchbox.availableDays && lunchbox.availableDays.length > 0 && (
+                <div className="flex items-center space-x-1">
+                  <Calendar className="w-3 h-3 text-muted-foreground" />
+                  <span className="text-xs text-muted-foreground">
+                    {lunchbox.availableDays.map(day => day.slice(0, 3).toUpperCase()).join(", ")}
+                  </span>
+                </div>
+              )}
             </div>
-          )}
+          </div>
           
-          {lunchbox.availableDays && lunchbox.availableDays.length > 0 && (
-            <div className="flex items-center space-x-1">
-              <Calendar className="w-3 h-3 text-muted-foreground" />
-              <span className="text-xs text-muted-foreground">
-                {lunchbox.availableDays.map(day => day.slice(0, 3).toUpperCase()).join(", ")}
-              </span>
+          <div className="flex sm:flex-col items-center sm:items-end justify-between sm:justify-start gap-3 sm:gap-2 w-full sm:w-auto">
+            <div className="text-lg font-bold text-primary" data-testid={`lunchbox-price-${lunchbox.id}`}>
+              ${lunchbox.price}
             </div>
-          )}
+            <Button 
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+              size="sm"
+              onClick={handleAddToCart}
+              disabled={!lunchbox.isAvailable}
+              data-testid={`button-add-to-cart-${lunchbox.id}`}
+            >
+              {lunchbox.isAvailable ? (
+                <>
+                  <Plus className="w-4 h-4 mr-1" />
+                  Add to Cart
+                </>
+              ) : (
+                "Unavailable"
+              )}
+            </Button>
+          </div>
         </div>
-      </div>
-      
-      <div className="text-right flex-shrink-0">
-        <div className="text-lg font-bold text-primary mb-2" data-testid={`lunchbox-price-${lunchbox.id}`}>
-          ${lunchbox.price}
-        </div>
-        <Button 
-          className="bg-primary text-primary-foreground hover:bg-primary/90"
-          size="sm"
-          onClick={handleAddToCart}
-          disabled={!lunchbox.isAvailable}
-          data-testid={`button-add-to-cart-${lunchbox.id}`}
-        >
-          {lunchbox.isAvailable ? (
-            <>
-              <Plus className="w-4 h-4 mr-1" />
-              Add to Cart
-            </>
-          ) : (
-            "Unavailable"
-          )}
-        </Button>
       </div>
     </div>
   );

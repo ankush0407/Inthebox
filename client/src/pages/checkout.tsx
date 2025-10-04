@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useLocationContext } from "@/contexts/location-context";
 import { useCart } from "@/hooks/use-cart";
 import { useAuth } from "@/hooks/use-auth";
@@ -212,19 +212,23 @@ export default function Checkout() {
   const isMultiRestaurant = restaurantNames.length > 1;
 
   // Get available delivery days from cart items
-  const availableDeliveryDays = Array.from(
-    new Set(
-      items.flatMap(item => item.lunchbox.availableDays || [])
-    )
-  ).sort((a, b) => {
-    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
-    return dayOrder.indexOf(a.toLowerCase()) - dayOrder.indexOf(b.toLowerCase());
-  });
+  const availableDeliveryDays = useMemo(() => 
+    Array.from(
+      new Set(
+        items.flatMap(item => item.lunchbox.availableDays || [])
+      )
+    ).sort((a, b) => {
+      const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+      return dayOrder.indexOf(a.toLowerCase()) - dayOrder.indexOf(b.toLowerCase());
+    }), [items]
+  );
 
   // Set default delivery day if not selected
-  if (!selectedDeliveryDay && availableDeliveryDays.length > 0) {
-    setSelectedDeliveryDay(availableDeliveryDays[0]);
-  }
+  useEffect(() => {
+    if (!selectedDeliveryDay && availableDeliveryDays.length > 0) {
+      setSelectedDeliveryDay(availableDeliveryDays[0]);
+    }
+  }, [selectedDeliveryDay, availableDeliveryDays]);
 
   const serviceFee = 1.50;
   const taxRate = 0.10;

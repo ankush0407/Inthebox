@@ -115,7 +115,7 @@ export default function RestaurantOrders() {
     return Array.from(items).sort();
   }, [orders]);
 
-  // Flatten orders to show each item as separate row
+  // Flatten orders to show each item as separate row with unique row IDs
   const flattenedOrders = useMemo(() => {
     if (!orders) return [];
     
@@ -123,6 +123,7 @@ export default function RestaurantOrders() {
       order.items.map(item => ({
         ...order,
         currentItem: item,
+        rowId: `${order.id}-${item.id}`, // Unique row identifier
         itemId: item.id,
       }))
     );
@@ -216,11 +217,16 @@ export default function RestaurantOrders() {
     },
   });
 
+  // Get unique order IDs from flattened orders
+  const uniqueOrderIds = useMemo(() => {
+    return Array.from(new Set(filteredOrders.map(order => order.id)));
+  }, [filteredOrders]);
+
   const handleSelectAll = () => {
-    if (selectedOrders.size === filteredOrders.length) {
+    if (selectedOrders.size === uniqueOrderIds.length) {
       setSelectedOrders(new Set());
     } else {
-      setSelectedOrders(new Set(filteredOrders.map(order => order.id)));
+      setSelectedOrders(new Set(uniqueOrderIds));
     }
   };
 
@@ -501,7 +507,7 @@ export default function RestaurantOrders() {
                         <TableRow>
                           <TableHead className="w-12">
                             <Checkbox
-                              checked={selectedOrders.size === filteredOrders.length && filteredOrders.length > 0}
+                              checked={selectedOrders.size === uniqueOrderIds.length && uniqueOrderIds.length > 0}
                               onCheckedChange={handleSelectAll}
                               data-testid="checkbox-select-all"
                             />
@@ -521,7 +527,7 @@ export default function RestaurantOrders() {
                       </TableHeader>
                       <TableBody>
                         {filteredOrders.map((order) => (
-                          <TableRow key={order.itemId} data-testid={`order-row-${order.itemId}`}>
+                          <TableRow key={order.rowId} data-testid={`order-row-${order.rowId}`}>
                             <TableCell>
                               <Checkbox
                                 checked={selectedOrders.has(order.id)}
