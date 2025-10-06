@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/use-auth";
 import { useLocation } from "wouter";
@@ -82,6 +82,13 @@ export default function RestaurantDashboard() {
       deliveryBuildingIds: [],
     },
   });
+
+  // Sync imageUrl with form when it changes (non-blocking to prevent re-renders during typing)
+  useEffect(() => {
+    if (lunchboxImageUrl) {
+      form.setValue("imageUrl", lunchboxImageUrl, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+    }
+  }, [lunchboxImageUrl]);  // Removed form from dependencies to prevent re-renders
 
   const addLunchboxMutation = useMutation({
     mutationFn: async (data: any) => {
@@ -378,14 +385,21 @@ export default function RestaurantDashboard() {
                     <CardTitle>Menu Management</CardTitle>
                     <CardDescription>Manage your lunchbox offerings</CardDescription>
                   </div>
-                  <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+                  <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
+                    setIsAddDialogOpen(open);
+                    if (!open) {
+                      // Reset form when closing
+                      form.reset();
+                      setLunchboxImageUrl("");
+                    }
+                  }}>
                     <DialogTrigger asChild>
                       <Button data-testid="button-add-lunchbox">
                         <Plus className="w-4 h-4 mr-2" />
                         Add Item
                       </Button>
                     </DialogTrigger>
-                    <DialogContent className="max-h-[85vh] overflow-y-auto">
+                    <DialogContent className="max-h-[85vh] overflow-y-auto" key="add-dialog">
                       <DialogHeader>
                         <DialogTitle>Add New Lunchbox</DialogTitle>
                         <DialogDescription>
@@ -468,7 +482,6 @@ export default function RestaurantDashboard() {
                                       ? `/public-objects/${rawUrl.split('/').slice(-1)[0]}` 
                                       : rawUrl;
                                     setLunchboxImageUrl(imageUrl);
-                                    form.setValue("imageUrl", imageUrl);
                                     toast({
                                       title: "Image uploaded successfully",
                                       description: "Your lunchbox image has been updated.",
@@ -715,8 +728,16 @@ export default function RestaurantDashboard() {
         </Tabs>
 
         {/* Edit Lunchbox Dialog */}
-        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-          <DialogContent className="max-h-[85vh] overflow-y-auto">
+        <Dialog open={isEditDialogOpen} onOpenChange={(open) => {
+          setIsEditDialogOpen(open);
+          if (!open) {
+            // Reset form and state when closing
+            setEditingLunchbox(null);
+            form.reset();
+            setLunchboxImageUrl("");
+          }
+        }}>
+          <DialogContent className="max-h-[85vh] overflow-y-auto" key={`edit-dialog-${editingLunchbox?.id || 'new'}`}>
             <DialogHeader>
               <DialogTitle>Edit Lunchbox</DialogTitle>
               <DialogDescription>
