@@ -102,7 +102,14 @@ export default function RestaurantProfile() {
       });
       userInitialized.current = true;
     }
-  }, [restaurant, user, form]);
+  }, [restaurant, user]); // Removed 'form' from dependencies to prevent re-renders on input changes
+
+  // Sync logoUrl with form when it changes (non-blocking to prevent re-renders during typing)
+  useEffect(() => {
+    if (logoUrl) {
+      form.setValue("imageUrl", logoUrl, { shouldValidate: false, shouldDirty: false, shouldTouch: false });
+    }
+  }, [logoUrl]); // Only watch logoUrl changes
 
   const updateRestaurantMutation = useMutation({
     mutationFn: async (data: RestaurantProfileFormData) => {
@@ -350,7 +357,6 @@ export default function RestaurantProfile() {
                               ? `/public-objects/${rawUrl.split('/').slice(-1)[0]}` 
                               : rawUrl;
                             setLogoUrl(imageUrl);
-                            form.setValue("imageUrl", imageUrl);
                             toast({
                               title: "Logo uploaded successfully",
                               description: "Your restaurant logo has been updated.",
