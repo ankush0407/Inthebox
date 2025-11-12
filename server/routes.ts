@@ -72,6 +72,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
       await storage.markEmailVerified(verification.id);
 
+      const pendingRegistration = req.session.pendingRegistration;
+      if (pendingRegistration && pendingRegistration.email === email) {
+        const user = await storage.createUser({
+          username: pendingRegistration.username,
+          email: pendingRegistration.email,
+          password: pendingRegistration.password,
+          role: pendingRegistration.role,
+          emailVerified: true,
+        });
+
+        delete req.session.pendingRegistration;
+
+        return res.json({ message: "Email verified and account created successfully", verified: true });
+      }
+
       const user = await storage.getUserByEmail(email);
       if (user) {
         await storage.updateUserEmailVerified(user.id, true);
