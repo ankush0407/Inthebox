@@ -16,6 +16,7 @@ export const users = pgTable("users", {
   providerId: text("provider_id"),
   role: userRoleEnum("role").notNull().default("customer"),
   profileComplete: boolean("profile_complete").default(true),
+  emailVerified: boolean("email_verified").default(false),
   fullName: text("full_name"),
   phoneNumber: text("phone_number"),
   deliveryLocationId: text("delivery_location_id"),
@@ -90,6 +91,25 @@ export const deliveryBuildings = pgTable("delivery_buildings", {
   address: text("address").notNull(),
   deliveryLocationId: varchar("delivery_location_id").references(() => deliveryLocations.id).notNull(),
   isActive: boolean("is_active").default(true),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const emailVerifications = pgTable("email_verifications", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  email: text("email").notNull(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  verified: boolean("verified").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
+});
+
+export const passwordResets = pgTable("password_resets", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  userId: varchar("user_id").references(() => users.id).notNull(),
+  token: text("token").notNull().unique(),
+  code: text("code").notNull(),
+  expiresAt: timestamp("expires_at").notNull(),
+  used: boolean("used").default(false),
   createdAt: timestamp("created_at").defaultNow(),
 });
 
@@ -203,6 +223,16 @@ export const insertDeliveryBuildingSchema = createInsertSchema(deliveryBuildings
   createdAt: true,
 });
 
+export const insertEmailVerificationSchema = createInsertSchema(emailVerifications).omit({
+  id: true,
+  createdAt: true,
+});
+
+export const insertPasswordResetSchema = createInsertSchema(passwordResets).omit({
+  id: true,
+  createdAt: true,
+});
+
 // Types
 export type User = typeof users.$inferSelect;
 export type InsertUser = z.infer<typeof insertUserSchema>;
@@ -218,3 +248,7 @@ export type DeliveryLocation = typeof deliveryLocations.$inferSelect;
 export type InsertDeliveryLocation = z.infer<typeof insertDeliveryLocationSchema>;
 export type DeliveryBuilding = typeof deliveryBuildings.$inferSelect;
 export type InsertDeliveryBuilding = z.infer<typeof insertDeliveryBuildingSchema>;
+export type EmailVerification = typeof emailVerifications.$inferSelect;
+export type InsertEmailVerification = z.infer<typeof insertEmailVerificationSchema>;
+export type PasswordReset = typeof passwordResets.$inferSelect;
+export type InsertPasswordReset = z.infer<typeof insertPasswordResetSchema>;

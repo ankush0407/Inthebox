@@ -5,15 +5,191 @@ import { setupAuth } from "./auth";
 import { insertRestaurantSchema, insertLunchboxSchema, insertOrderSchema, insertOrderItemSchema, Order, insertDeliveryLocationSchema, DeliveryLocation, insertDeliveryBuildingSchema, DeliveryBuilding } from "@shared/schema";
 import { ObjectStorageService } from "./objectStorage";
 import Stripe from "stripe";
+import { emailService, generateVerificationCode, generateResetToken } from "./emailService";
+import { z } from "zod";
+import { scrypt, randomBytes, timingSafeEqual } from "crypto";
+import { promisify } from "util";
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
+const scryptAsync = promisify(scrypt);
+
 export async function registerRoutes(app: Express): Promise<Server> {
   // Setup authentication routes
   setupAuth(app);
+
+  // Email verification routes
+  app.post("/api/auth/send-verification-code", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await storage.createEmailVerification({
+        email,
+        code,
+        expiresAt,
+        verified: false,
+      });
+
+      await emailService.sendVerificationCode(email, code);
+
+      res.json({ message: "Verification code sent to your email" });
+    } catch (error: any) {
+      console.error("Error sending verification code:", error);
+      res.status(400).json({ message: error.message || "Failed to send verification code" });
+    }
+  });
+
+  app.post("/api/auth/verify-email", async (req, res) => {
+    try {
+      const { email, code } = z.object({
+        email: z.string().email(),
+        code: z.string().length(6),
+      }).parse(req.body);
+
+      const verification = await storage.getLatestEmailVerification(email);
+
+      if (!verification) {
+        return res.status(400).json({ message: "No verification code found for this email" });
+      }
+
+      if (verification.verified) {
+        return res.status(400).json({ message: "This code has already been used" });
+      }
+
+      if (new Date() > new Date(verification.expiresAt)) {
+        return res.status(400).json({ message: "Verification code has expired" });
+      }
+
+      if (verification.code !== code) {
+        return res.status(400).json({ message: "Invalid verification code" });
+      }
+
+      await storage.markEmailVerified(verification.id);
+
+      const user = await storage.getUserByEmail(email);
+      if (user) {
+        await storage.updateUserEmailVerified(user.id, true);
+      }
+
+      res.json({ message: "Email verified successfully", verified: true });
+    } catch (error: any) {
+      console.error("Error verifying email:", error);
+      res.status(400).json({ message: error.message || "Failed to verify email" });
+    }
+  });
+
+  // Password reset routes
+  app.post("/api/auth/request-password-reset", async (req, res) => {
+    try {
+      const { email } = z.object({ email: z.string().email() }).parse(req.body);
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.json({ message: "If a user with that email exists, a password reset code has been sent" });
+      }
+
+      if (user.provider !== 'local') {
+        return res.status(400).json({ message: "Password reset is only available for local accounts" });
+      }
+
+      const code = generateVerificationCode();
+      const token = generateResetToken();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await storage.createPasswordReset({
+        userId: user.id,
+        token,
+        code,
+        expiresAt,
+        used: false,
+      });
+
+      await emailService.sendPasswordResetCode(email, code, user.username);
+
+      res.json({ message: "If a user with that email exists, a password reset code has been sent" });
+    } catch (error: any) {
+      console.error("Error requesting password reset:", error);
+      res.status(400).json({ message: error.message || "Failed to process password reset request" });
+    }
+  });
+
+  app.post("/api/auth/verify-reset-code", async (req, res) => {
+    try {
+      const { email, code } = z.object({
+        email: z.string().email(),
+        code: z.string().length(6),
+      }).parse(req.body);
+
+      const user = await storage.getUserByEmail(email);
+      if (!user) {
+        return res.status(400).json({ message: "Invalid code" });
+      }
+
+      const reset = await storage.getLatestPasswordReset(user.id);
+
+      if (!reset) {
+        return res.status(400).json({ message: "No reset request found" });
+      }
+
+      if (reset.used) {
+        return res.status(400).json({ message: "This code has already been used" });
+      }
+
+      if (new Date() > new Date(reset.expiresAt)) {
+        return res.status(400).json({ message: "Reset code has expired" });
+      }
+
+      if (reset.code !== code) {
+        return res.status(400).json({ message: "Invalid code" });
+      }
+
+      res.json({ message: "Code verified", token: reset.token });
+    } catch (error: any) {
+      console.error("Error verifying reset code:", error);
+      res.status(400).json({ message: error.message || "Failed to verify code" });
+    }
+  });
+
+  app.post("/api/auth/reset-password", async (req, res) => {
+    try {
+      const { token, newPassword } = z.object({
+        token: z.string(),
+        newPassword: z.string().min(6),
+      }).parse(req.body);
+
+      const reset = await storage.getPasswordResetByToken(token);
+
+      if (!reset) {
+        return res.status(400).json({ message: "Invalid or expired reset token" });
+      }
+
+      if (reset.used) {
+        return res.status(400).json({ message: "This reset token has already been used" });
+      }
+
+      if (new Date() > new Date(reset.expiresAt)) {
+        return res.status(400).json({ message: "Reset token has expired" });
+      }
+
+      const salt = randomBytes(16).toString("hex");
+      const buf = (await scryptAsync(newPassword, salt, 64)) as Buffer;
+      const hashedPassword = `${buf.toString("hex")}.${salt}`;
+
+      await storage.updateUserPassword(reset.userId, hashedPassword);
+      await storage.markPasswordResetUsed(reset.id);
+
+      res.json({ message: "Password reset successfully" });
+    } catch (error: any) {
+      console.error("Error resetting password:", error);
+      res.status(400).json({ message: error.message || "Failed to reset password" });
+    }
+  });
 
   // Object storage routes
   app.post("/api/objects/upload", async (req, res) => {

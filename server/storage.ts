@@ -1,12 +1,15 @@
 import { 
   users, restaurants, lunchboxes, orders, orderItems, deliveryLocations, deliveryBuildings,
+  emailVerifications, passwordResets,
   type User, type InsertUser,
   type Restaurant, type InsertRestaurant,
   type Lunchbox, type InsertLunchbox,
   type Order, type InsertOrder,
   type OrderItem, type InsertOrderItem,
   type DeliveryLocation, type InsertDeliveryLocation,
-  type DeliveryBuilding, type InsertDeliveryBuilding
+  type DeliveryBuilding, type InsertDeliveryBuilding,
+  type EmailVerification, type InsertEmailVerification,
+  type PasswordReset, type InsertPasswordReset
 } from "@shared/schema";
 import { db } from "./db";
 import { eq, desc, and } from "drizzle-orm";
@@ -26,6 +29,17 @@ export interface IStorage {
   linkOAuthAccount(userId: string, provider: string, providerId: string): Promise<User>;
   completeProfile(userId: string, role: string): Promise<User>;
   updateUserProfile(userId: string, profile: { fullName?: string; phoneNumber?: string; deliveryLocationId?: string }): Promise<User>;
+  updateUserEmailVerified(userId: string, verified: boolean): Promise<User>;
+  updateUserPassword(userId: string, password: string): Promise<User>;
+  
+  createEmailVerification(data: InsertEmailVerification): Promise<EmailVerification>;
+  getLatestEmailVerification(email: string): Promise<EmailVerification | undefined>;
+  markEmailVerified(id: string): Promise<void>;
+  
+  createPasswordReset(data: InsertPasswordReset): Promise<PasswordReset>;
+  getLatestPasswordReset(userId: string): Promise<PasswordReset | undefined>;
+  getPasswordResetByToken(token: string): Promise<PasswordReset | undefined>;
+  markPasswordResetUsed(id: string): Promise<void>;
   
   getDeliveryLocations(): Promise<DeliveryLocation[]>;
   getAllDeliveryLocations(): Promise<DeliveryLocation[]>;
@@ -134,6 +148,102 @@ export class DatabaseStorage implements IStorage {
         .where(eq(users.id, userId))
         .returning();
       return user;
+    });
+  }
+
+  async updateUserEmailVerified(userId: string, verified: boolean): Promise<User> {
+    return withRetry(async () => {
+      const [user] = await db
+        .update(users)
+        .set({ emailVerified: verified })
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
+  }
+
+  async updateUserPassword(userId: string, password: string): Promise<User> {
+    return withRetry(async () => {
+      const [user] = await db
+        .update(users)
+        .set({ password })
+        .where(eq(users.id, userId))
+        .returning();
+      return user;
+    });
+  }
+
+  async createEmailVerification(data: InsertEmailVerification): Promise<EmailVerification> {
+    return withRetry(async () => {
+      const [verification] = await db
+        .insert(emailVerifications)
+        .values(data)
+        .returning();
+      return verification;
+    });
+  }
+
+  async getLatestEmailVerification(email: string): Promise<EmailVerification | undefined> {
+    return withRetry(async () => {
+      const [verification] = await db
+        .select()
+        .from(emailVerifications)
+        .where(eq(emailVerifications.email, email))
+        .orderBy(desc(emailVerifications.createdAt))
+        .limit(1);
+      return verification || undefined;
+    });
+  }
+
+  async markEmailVerified(id: string): Promise<void> {
+    return withRetry(async () => {
+      await db
+        .update(emailVerifications)
+        .set({ verified: true })
+        .where(eq(emailVerifications.id, id));
+    });
+  }
+
+  async createPasswordReset(data: InsertPasswordReset): Promise<PasswordReset> {
+    return withRetry(async () => {
+      const [reset] = await db
+        .insert(passwordResets)
+        .values(data)
+        .returning();
+      return reset;
+    });
+  }
+
+  async getLatestPasswordReset(userId: string): Promise<PasswordReset | undefined> {
+    return withRetry(async () => {
+      const [reset] = await db
+        .select()
+        .from(passwordResets)
+        .where(eq(passwordResets.userId, userId))
+        .orderBy(desc(passwordResets.createdAt))
+        .limit(1);
+      return reset || undefined;
+    });
+  }
+
+  async getPasswordResetByToken(token: string): Promise<PasswordReset | undefined> {
+    return withRetry(async () => {
+      const [reset] = await db
+        .select()
+        .from(passwordResets)
+        .where(and(eq(passwordResets.token, token), eq(passwordResets.used, false)))
+        .orderBy(desc(passwordResets.createdAt))
+        .limit(1);
+      return reset || undefined;
+    });
+  }
+
+  async markPasswordResetUsed(id: string): Promise<void> {
+    return withRetry(async () => {
+      await db
+        .update(passwordResets)
+        .set({ used: true })
+        .where(eq(passwordResets.id, id));
     });
   }
 
