@@ -69,7 +69,7 @@ export default function AuthPage() {
     try {
       const { confirmPassword, ...userData } = data;
       await registerMutation.mutateAsync(userData);
-      setLocation("/");
+      setLocation("/verify-email");
     } catch (error) {
       // Error is handled by the mutation's onError callback
     }
@@ -181,6 +181,16 @@ export default function AuthPage() {
                       </Button>
                     </form>
                   </Form>
+                  <div className="text-center mt-4">
+                    <Button
+                      variant="link"
+                      onClick={() => setLocation("/forgot-password")}
+                      className="text-sm"
+                      data-testid="link-forgot-password"
+                    >
+                      Forgot your password?
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>

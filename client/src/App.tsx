@@ -10,6 +10,8 @@ import { ProtectedRoute } from "./lib/protected-route";
 import HomePage from "@/pages/home-page";
 import AuthPage from "@/pages/auth-page";
 import RoleSelectionPage from "@/pages/role-selection";
+import VerifyEmailPage from "@/pages/verify-email";
+import ForgotPasswordPage from "@/pages/forgot-password";
 import UserProfile from "@/pages/user-profile";
 import Orders from "@/pages/orders";
 import RestaurantDashboard from "@/pages/restaurant-dashboard";
@@ -31,6 +33,8 @@ function Router() {
       <ProtectedRoute path="/admin-panel" component={AdminPanel} />
       <ProtectedRoute path="/checkout" component={Checkout} />
       <Route path="/auth" component={AuthPage} />
+      <Route path="/verify-email" component={VerifyEmailPage} />
+      <Route path="/forgot-password" component={ForgotPasswordPage} />
       <Route path="/role-selection" component={RoleSelectionPage} />
       <Route component={NotFound} />
     </Switch>
