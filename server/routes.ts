@@ -10,6 +10,17 @@ import { z } from "zod";
 import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 
+declare module 'express-session' {
+  interface SessionData {
+    pendingRegistration?: {
+      username: string;
+      email: string;
+      password: string;
+      role: string;
+    };
+  }
+}
+
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error('Missing required Stripe secret: STRIPE_SECRET_KEY');
 }
@@ -78,7 +89,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
           username: pendingRegistration.username,
           email: pendingRegistration.email,
           password: pendingRegistration.password,
-          role: pendingRegistration.role,
+          role: pendingRegistration.role as "customer" | "restaurant_owner" | "admin",
           emailVerified: true,
         });
 

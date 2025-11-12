@@ -12,14 +12,17 @@ import { User as SelectUser } from "@shared/schema";
 declare global {
   namespace Express {
     interface User extends SelectUser {}
-    interface SessionData {
-      pendingRegistration?: {
-        username: string;
-        email: string;
-        password: string;
-        role: string;
-      };
-    }
+  }
+}
+
+declare module 'express-session' {
+  interface SessionData {
+    pendingRegistration?: {
+      username: string;
+      email: string;
+      password: string;
+      role: string;
+    };
   }
 }
 

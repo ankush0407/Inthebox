@@ -11,7 +11,11 @@ import { apiRequest } from "@/lib/queryClient";
 export default function VerifyEmailPage() {
   const [, setLocation] = useLocation();
   const { toast } = useToast();
-  const [email, setEmail] = useState("");
+  
+  const urlParams = new URLSearchParams(window.location.search);
+  const emailParam = urlParams.get('email') || '';
+  
+  const [email, setEmail] = useState(emailParam);
   const [code, setCode] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
@@ -169,10 +173,10 @@ export default function VerifyEmailPage() {
           <div className="text-center">
             <Button
               variant="link"
-              onClick={() => setLocation("/auth")}
-              data-testid="link-back-to-login"
+              onClick={() => setLocation("/auth?tab=register")}
+              data-testid="link-back-to-signup"
             >
-              Back to Login
+              Change Email / Back to Signup
             </Button>
           </div>
         </CardContent>

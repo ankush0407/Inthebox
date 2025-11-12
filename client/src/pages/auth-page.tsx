@@ -30,6 +30,9 @@ export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { user, loginMutation, registerMutation } = useAuth();
 
+  const urlParams = new URLSearchParams(window.location.search);
+  const tabParam = urlParams.get('tab') || 'login';
+
   const loginForm = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
@@ -69,7 +72,7 @@ export default function AuthPage() {
     try {
       const { confirmPassword, ...userData } = data;
       await registerMutation.mutateAsync(userData);
-      setLocation("/verify-email");
+      setLocation(`/verify-email?email=${encodeURIComponent(data.email)}`);
     } catch (error) {
       // Error is handled by the mutation's onError callback
     }
@@ -91,7 +94,7 @@ export default function AuthPage() {
             <p className="text-muted-foreground">Sign in to your account or create a new one</p>
           </div>
 
-          <Tabs defaultValue="login" className="space-y-6">
+          <Tabs defaultValue={tabParam} className="space-y-6">
             <TabsList className="grid w-full grid-cols-2">
               <TabsTrigger value="login" data-testid="tab-login">Login</TabsTrigger>
               <TabsTrigger value="register" data-testid="tab-register">Sign Up</TabsTrigger>
