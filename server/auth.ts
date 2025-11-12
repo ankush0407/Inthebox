@@ -8,6 +8,7 @@ import { scrypt, randomBytes, timingSafeEqual } from "crypto";
 import { promisify } from "util";
 import { storage } from "./storage";
 import { User as SelectUser } from "@shared/schema";
+import { emailService, generateVerificationCode } from "./emailService";
 
 declare global {
   namespace Express {
@@ -202,6 +203,22 @@ export function setupAuth(app: Express) {
         password: hashedPassword,
         role: role || 'customer',
       };
+
+      const code = generateVerificationCode();
+      const expiresAt = new Date(Date.now() + 15 * 60 * 1000);
+
+      await storage.createEmailVerification({
+        email,
+        code,
+        expiresAt,
+        verified: false,
+      });
+
+      try {
+        await emailService.sendVerificationCode(email, code);
+      } catch (emailError: any) {
+        console.error("Failed to send verification email:", emailError.message);
+      }
 
       res.status(200).json({ 
         message: "Registration data saved. Please verify your email.",
