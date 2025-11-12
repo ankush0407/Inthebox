@@ -17,7 +17,7 @@ SET client_min_messages = warning;
 SET row_security = off;
 
 --
--- Name: order_status; Type: TYPE; Schema: public; Owner: -
+-- Name: order_status; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.order_status AS ENUM (
@@ -31,8 +31,10 @@ CREATE TYPE public.order_status AS ENUM (
 );
 
 
+ALTER TYPE public.order_status OWNER TO neondb_owner;
+
 --
--- Name: user_role; Type: TYPE; Schema: public; Owner: -
+-- Name: user_role; Type: TYPE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TYPE public.user_role AS ENUM (
@@ -42,12 +44,14 @@ CREATE TYPE public.user_role AS ENUM (
 );
 
 
+ALTER TYPE public.user_role OWNER TO neondb_owner;
+
 SET default_tablespace = '';
 
 SET default_table_access_method = heap;
 
 --
--- Name: delivery_buildings; Type: TABLE; Schema: public; Owner: -
+-- Name: delivery_buildings; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.delivery_buildings (
@@ -60,8 +64,10 @@ CREATE TABLE public.delivery_buildings (
 );
 
 
+ALTER TABLE public.delivery_buildings OWNER TO neondb_owner;
+
 --
--- Name: delivery_locations; Type: TABLE; Schema: public; Owner: -
+-- Name: delivery_locations; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.delivery_locations (
@@ -73,8 +79,26 @@ CREATE TABLE public.delivery_locations (
 );
 
 
+ALTER TABLE public.delivery_locations OWNER TO neondb_owner;
+
 --
--- Name: lunchboxes; Type: TABLE; Schema: public; Owner: -
+-- Name: email_verifications; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.email_verifications (
+    id character varying DEFAULT gen_random_uuid() NOT NULL,
+    email text NOT NULL,
+    code text NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    verified boolean DEFAULT false,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.email_verifications OWNER TO neondb_owner;
+
+--
+-- Name: lunchboxes; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.lunchboxes (
@@ -92,8 +116,10 @@ CREATE TABLE public.lunchboxes (
 );
 
 
+ALTER TABLE public.lunchboxes OWNER TO neondb_owner;
+
 --
--- Name: order_items; Type: TABLE; Schema: public; Owner: -
+-- Name: order_items; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.order_items (
@@ -105,8 +131,10 @@ CREATE TABLE public.order_items (
 );
 
 
+ALTER TABLE public.order_items OWNER TO neondb_owner;
+
 --
--- Name: orders; Type: TABLE; Schema: public; Owner: -
+-- Name: orders; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.orders (
@@ -127,8 +155,10 @@ CREATE TABLE public.orders (
 );
 
 
+ALTER TABLE public.orders OWNER TO neondb_owner;
+
 --
--- Name: orders_order_number_seq; Type: SEQUENCE; Schema: public; Owner: -
+-- Name: orders_order_number_seq; Type: SEQUENCE; Schema: public; Owner: neondb_owner
 --
 
 CREATE SEQUENCE public.orders_order_number_seq
@@ -140,15 +170,34 @@ CREATE SEQUENCE public.orders_order_number_seq
     CACHE 1;
 
 
+ALTER SEQUENCE public.orders_order_number_seq OWNER TO neondb_owner;
+
 --
--- Name: orders_order_number_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: -
+-- Name: orders_order_number_seq; Type: SEQUENCE OWNED BY; Schema: public; Owner: neondb_owner
 --
 
 ALTER SEQUENCE public.orders_order_number_seq OWNED BY public.orders.order_number;
 
 
 --
--- Name: restaurants; Type: TABLE; Schema: public; Owner: -
+-- Name: password_resets; Type: TABLE; Schema: public; Owner: neondb_owner
+--
+
+CREATE TABLE public.password_resets (
+    id character varying DEFAULT gen_random_uuid() NOT NULL,
+    user_id character varying NOT NULL,
+    token text NOT NULL,
+    code text NOT NULL,
+    expires_at timestamp without time zone NOT NULL,
+    used boolean DEFAULT false,
+    created_at timestamp without time zone DEFAULT now()
+);
+
+
+ALTER TABLE public.password_resets OWNER TO neondb_owner;
+
+--
+-- Name: restaurants; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.restaurants (
@@ -167,8 +216,10 @@ CREATE TABLE public.restaurants (
 );
 
 
+ALTER TABLE public.restaurants OWNER TO neondb_owner;
+
 --
--- Name: session; Type: TABLE; Schema: public; Owner: -
+-- Name: session; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.session (
@@ -178,8 +229,10 @@ CREATE TABLE public.session (
 );
 
 
+ALTER TABLE public.session OWNER TO neondb_owner;
+
 --
--- Name: users; Type: TABLE; Schema: public; Owner: -
+-- Name: users; Type: TABLE; Schema: public; Owner: neondb_owner
 --
 
 CREATE TABLE public.users (
@@ -194,19 +247,22 @@ CREATE TABLE public.users (
     profile_complete boolean DEFAULT true,
     full_name text,
     phone_number text,
-    delivery_location_id text
+    delivery_location_id text,
+    email_verified boolean DEFAULT false
 );
 
 
+ALTER TABLE public.users OWNER TO neondb_owner;
+
 --
--- Name: orders order_number; Type: DEFAULT; Schema: public; Owner: -
+-- Name: orders order_number; Type: DEFAULT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders ALTER COLUMN order_number SET DEFAULT nextval('public.orders_order_number_seq'::regclass);
 
 
 --
--- Data for Name: delivery_buildings; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: delivery_buildings; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.delivery_buildings (id, name, address, delivery_location_id, is_active, created_at) FROM stdin;
@@ -219,7 +275,7 @@ b1132c9b-c123-46ee-a935-45445fc1b06c	Amazon Bingo		549b4550-a34f-46ed-8787-f0a73
 
 
 --
--- Data for Name: delivery_locations; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: delivery_locations; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.delivery_locations (id, name, address, is_active, created_at) FROM stdin;
@@ -230,7 +286,21 @@ c1da4cf5-4323-4d05-aa69-16bae11b8cb1	Redmond		t	2025-09-04 21:17:59.749427
 
 
 --
--- Data for Name: lunchboxes; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: email_verifications; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+--
+
+COPY public.email_verifications (id, email, code, expires_at, verified, created_at) FROM stdin;
+6c448257-0c44-487d-b9bb-c48e08c8f729	test-FWG-mn@example.com	479785	2025-11-12 13:35:29.558	f	2025-11-12 13:20:29.618229
+7dc9a8a5-a0f9-4bbf-a9d0-3dabfecc334f	test-_bkA81@example.com	899716	2025-11-12 13:38:25.331	f	2025-11-12 13:23:25.385663
+3c08aab9-0bc1-4b34-9610-bc6aa9101df2	khandelwal.ankush@gmail.com	350582	2025-11-12 13:50:35.61	t	2025-11-12 13:35:35.663561
+28541ad2-ad5a-43e7-ab1a-73b50cdbeb0b	customer-DvRdn9@test.com	292613	2025-11-12 18:56:23.109	t	2025-11-12 18:41:23.163845
+205f264e-3415-45f0-83dd-34ea3c519b60	user1-3190BI@test.com	305537	2025-11-12 19:01:48.592	t	2025-11-12 18:46:48.645334
+ba363225-e511-4929-876d-bdd7a5b8bf9d	user2-sxZ0GM@test.com	310677	2025-11-12 19:10:06.558	t	2025-11-12 18:55:06.609545
+\.
+
+
+--
+-- Data for Name: lunchboxes; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.lunchboxes (id, name, description, price, image_url, is_available, dietary_tags, restaurant_id, created_at, available_days, delivery_building_ids) FROM stdin;
@@ -254,42 +324,31 @@ e0c28e41-cf76-40ad-8908-6d7f5d1b63d6	Veg-box	Monday - Rajma + Chole\nTuesday - K
 
 
 --
--- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: order_items; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.order_items (id, order_id, lunchbox_id, quantity, price) FROM stdin;
-f3c014ca-6483-4097-adc1-0b0a56d53d70	36015fd4-eed0-40aa-8356-492374bdda09	28f04e8a-ad0b-4e8f-ae31-b55b4ed4202c	1	10.81
-e59cb636-7bcc-4091-9bfe-f95a7c4783d8	27110811-1671-4a42-9103-6341e68d1284	28f04e8a-ad0b-4e8f-ae31-b55b4ed4202c	1	10.81
-b13295ea-3777-49c2-91e5-9e4329bfa009	2298e949-3be4-47c8-9046-c31ea709fe53	28f04e8a-ad0b-4e8f-ae31-b55b4ed4202c	1	10.81
-4a1a5f95-4bd9-41a7-87f5-c75ebbe68887	bc41530e-8ba6-48cf-97c3-fbc1f7f0ea0c	28f04e8a-ad0b-4e8f-ae31-b55b4ed4202c	2	10.81
-ea117a4e-46fc-4285-91d9-d60815a6aa45	c18afe56-29ce-47f8-a365-cba93a5d4d87	28f04e8a-ad0b-4e8f-ae31-b55b4ed4202c	1	10.81
-16402bae-07be-4da6-b056-788701019d5e	f344616a-bb52-43f6-8100-f724d5c0a6e4	3500ba4d-bbc0-4040-86fa-3f2964ad2dd6	1	10.99
-7c949d9d-f5d0-44ed-8560-bbb2167ce3e6	6a1beba2-6949-4388-b0ba-651746522f0d	3500ba4d-bbc0-4040-86fa-3f2964ad2dd6	1	10.99
-3b915d00-c299-40d3-bd4b-d468e8d6de07	e0817735-e241-4e7b-a189-0bee64933b1a	3500ba4d-bbc0-4040-86fa-3f2964ad2dd6	1	10.99
-79c2370a-8f21-4e1a-bf73-fbc26faf6173	a632a0fa-7a71-4fde-9aad-bf998a92c88b	e0c28e41-cf76-40ad-8908-6d7f5d1b63d6	1	7.99
-899f5f18-8875-4d4b-ac1e-06dedafe7bf5	a632a0fa-7a71-4fde-9aad-bf998a92c88b	25a43f01-5d15-4054-8d8d-249d8bf449c7	1	8.99
 \.
 
 
 --
--- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: orders; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.orders (id, customer_id, restaurant_id, status, subtotal, delivery_fee, service_fee, tax, total, delivery_location, created_at, order_number, delivery_day, delivery_building_id) FROM stdin;
-2298e949-3be4-47c8-9046-c31ea709fe53	755432dc-1d88-41d7-a84e-9a7365439558	afcbe3ca-2f99-4913-af63-5f80b73b1bd0	delivered	10.81	0.00	1.50	1.08	13.39	Amazon Bellevue	2025-09-07 20:53:18.848446	3	monday	\N
-bc41530e-8ba6-48cf-97c3-fbc1f7f0ea0c	755432dc-1d88-41d7-a84e-9a7365439558	afcbe3ca-2f99-4913-af63-5f80b73b1bd0	delivered	21.62	0.00	1.50	2.16	25.28	Amazon Bellevue	2025-09-07 20:58:11.432244	4	tuesday	\N
-36015fd4-eed0-40aa-8356-492374bdda09	755432dc-1d88-41d7-a84e-9a7365439558	afcbe3ca-2f99-4913-af63-5f80b73b1bd0	delivered	10.81	0.00	1.50	1.08	13.39	Amazon Bellevue	2025-09-06 16:53:36.886675	1	tuesday	\N
-27110811-1671-4a42-9103-6341e68d1284	755432dc-1d88-41d7-a84e-9a7365439558	afcbe3ca-2f99-4913-af63-5f80b73b1bd0	delivered	10.81	0.00	1.50	1.08	13.39	Amazon Bellevue	2025-09-06 17:27:56.990339	2	tuesday	\N
-c18afe56-29ce-47f8-a365-cba93a5d4d87	a50bd5a9-7f7a-4360-bf86-7646bd740165	afcbe3ca-2f99-4913-af63-5f80b73b1bd0	pending	10.81	0.00	1.50	1.08	13.39	Amazon Bellevue	2025-10-03 19:50:08.793475	5	tuesday	\N
-f344616a-bb52-43f6-8100-f724d5c0a6e4	a50bd5a9-7f7a-4360-bf86-7646bd740165	eddd220e-32b0-484b-a1c5-ace96cbb8d1b	confirmed	10.99	0.00	1.50	1.10	13.59	Amazon SLU	2025-10-03 20:24:28.28971	6	monday	\N
-6a1beba2-6949-4388-b0ba-651746522f0d	a50bd5a9-7f7a-4360-bf86-7646bd740165	eddd220e-32b0-484b-a1c5-ace96cbb8d1b	confirmed	10.99	0.00	1.50	1.10	13.59	Seattle	2025-10-04 01:54:55.675062	7	monday	724799da-ebc2-42eb-9cfa-77a8c1a41739
-e0817735-e241-4e7b-a189-0bee64933b1a	a50bd5a9-7f7a-4360-bf86-7646bd740165	eddd220e-32b0-484b-a1c5-ace96cbb8d1b	pending	10.99	0.00	1.50	1.10	13.59	Seattle	2025-10-04 03:11:29.610183	8	tuesday	1f9b2229-cefa-4c12-9c15-3eaf57f9c554
-a632a0fa-7a71-4fde-9aad-bf998a92c88b	a50bd5a9-7f7a-4360-bf86-7646bd740165	4b9edb8d-8769-4351-9680-cf0b75b3a728	pending	16.98	2.99	1.50	1.70	23.17	Bellevue	2025-10-04 03:42:34.509853	9	friday	b1132c9b-c123-46ee-a935-45445fc1b06c
 \.
 
 
 --
--- Data for Name: restaurants; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: password_resets; Type: TABLE DATA; Schema: public; Owner: neondb_owner
+--
+
+COPY public.password_resets (id, user_id, token, code, expires_at, used, created_at) FROM stdin;
+\.
+
+
+--
+-- Data for Name: restaurants; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.restaurants (id, name, description, cuisine, image_url, rating, delivery_time, delivery_fee, is_active, owner_id, created_at, delivery_location_id) FROM stdin;
@@ -305,44 +364,51 @@ eddd220e-32b0-484b-a1c5-ace96cbb8d1b	Athithi	Indian Food	indian	/public-objects/
 
 
 --
--- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: session; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
 COPY public.session (sid, sess, expire) FROM stdin;
-58QlNcwxLQOCQAaexpCoOeqtZyhbAbBa	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"}}	2025-11-12 17:11:57
+Smua9WoOOf5AJtlnJQ3FG_oLKw0qMcMm	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"pendingRegistration":{"username":"","email":"","password":"4335eeff7cd589f20a3279c685435e746e8db37157b6e0b5112e51d9cf18b61358b22c15c27fc6a7fbc8511a3f4f1b5e4b52fda3b1b9f09a818ffe478e5ecc6b.cec81e1be7a7cbcec04f64f386c44423","role":"customer"}}	2025-11-13 13:17:49
+8zzS3tcLKW6WqJgngPLK32TAbZtYbf9D	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"pendingRegistration":{"username":"user-_bkA81","email":"test-_bkA81@example.com","password":"d36e897e9d3d610323a51a8de7f8dcd145e93fef26fda5e3e734edec600f2d574170834e899907559ce79510debb4220378741dc2c507b1de6352fcbe4ce7eb0.f800f67c6a7ef0c89353cc32f54eafa0","role":"customer"}}	2025-11-13 13:23:26
+iA_lGu7KYUlJQpmkIPkqV2WFMZFpzLZx	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"pendingRegistration":{"username":"user-94cPje","email":"test-FWG-mn@example.com","password":"5111a052be1db2b0a1a71283b820c1a068b9ef822169b2194137aedeade17e923f39028854e9a714c70f2c57c9e59e05b64f79b7f94ffeb0920e9eff2220ba6d.652185b2cded76b4231d22228ac79953","role":"customer"}}	2025-11-13 13:20:31
+1DU8WPSi9Bxq4jYHksSikjKHLDwmSpZU	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"passport":{"user":"d9c26800-bdd7-411c-b54d-5ddd2316aa8c"}}	2025-11-13 18:44:25
+863YH5-zWsQtAlwcMZ-osKfnFY-c7XyF	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"}}	2025-11-13 20:16:38
+oLRwNVTb-aHu4wKplgMWR-uoqNQtPSFC	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"pendingRegistration":{"username":"test-rybZ0d","email":"test-rybZ0d@example.com","password":"14edc7042b37c150146621dd34f0c7101af1e5942cdadc5606a659fbc9e05fd4896c088402dc0f4e1b5bac1969ed7b8bda5ce06e623141304d98518d696d5be4.3dad8222052f496658bf5e0d48ffc25b","role":"customer"}}	2025-11-13 13:14:27
+f7QBOpugJWWAww3qKQtxtrg_vwV8Rbav	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"}}	2025-11-13 00:25:07
+M_nihkihIEKttm1t7GN9xhQnTKzc27qW	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"}}	2025-11-13 13:27:50
+lSpf5t_mcK3EET_AR8iP_cdlO8uokamt	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"},"passport":{"user":"0570d127-9d80-4c3e-ab7a-390fc11cf6ec"}}	2025-11-13 18:57:18
+GaCDHTbsQMMZjwvWSSfRVZQrpZ827RIc	{"cookie":{"originalMaxAge":null,"expires":null,"httpOnly":true,"path":"/"}}	2025-11-13 01:03:27
 \.
 
 
 --
--- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: -
+-- Data for Name: users; Type: TABLE DATA; Schema: public; Owner: neondb_owner
 --
 
-COPY public.users (id, username, email, password, role, created_at, provider, provider_id, profile_complete, full_name, phone_number, delivery_location_id) FROM stdin;
-e2760513-8a67-41ea-96fe-abc7c67cf12c	restaurant_owner1	owner1@restaurant.com	7c2f2b59f2c36d3267419a4224c97d8b2fee3ca3ccdd570d2f93e02ec831739839d9467f9ba5e216c1422dccc388855ffeb6706aff9bc5155046c6ffe379665d.3fd56d73532bb771c8f54fa6b529b93b	restaurant_owner	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N
-f0a60d55-97e4-4d4c-a3ec-f7cb795cd3de	restaurant_owner2	owner2@restaurant.com	7c2f2b59f2c36d3267419a4224c97d8b2fee3ca3ccdd570d2f93e02ec831739839d9467f9ba5e216c1422dccc388855ffeb6706aff9bc5155046c6ffe379665d.3fd56d73532bb771c8f54fa6b529b93b	restaurant_owner	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N
-d5e7bc9f-1336-4077-ae9e-21eb4648b5bb	admin	admin@lunchbox.com	bbdede6b0e9cc372cebc063e4b937879023a89caceaf3a924b88e68d216df308fa75547d6a3726e417e57072ad84d09ed5a3c5b91852682eeefc4a9ead7086ee.59aa86bfc146a033733edf1957007517	admin	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N
-dd2d404e-9d3e-44cb-9078-8f215754ac99	restaurant_owner3	inthebox.busines@gmail.com	0d9addd3e1664e59e60ce6410f364ccbdb5f9ff2967b2b2ca40206354eaebb07cc4f5aae6d3ce7e43312a0ab67bb07aadee81588c14a58d470a5ffa2887ae904.90dbd780d3b7e828810cd42455ee95c9	restaurant_owner	2025-09-03 00:02:39.803146	local	\N	t	Ankush Khandelwal	1234567890	\N
-e82ad8ec-5841-41fc-99fe-767cfe4e91aa	admin123	admin@gmail.com	admin123	admin	2025-09-09 22:05:31.264984	local	\N	t	\N	\N	\N
-b64a7aae-fcd8-42da-be93-8d85f9b2385a	test_restaurant	test@restaurant.com	$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi	restaurant_owner	2025-09-02 23:57:09.618763	local	\N	t	\N	\N	\N
-96e3b41d-2590-4f36-8704-a8084728639d	customer1	customer1@amazon.com	7c2f2b59f2c36d3267419a4224c97d8b2fee3ca3ccdd570d2f93e02ec831739839d9467f9ba5e216c1422dccc388855ffeb6706aff9bc5155046c6ffe379665d.3fd56d73532bb771c8f54fa6b529b93b	customer	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N
-f53395b2-b05d-4a5c-bafd-c6a3872b90f4	testowner	test@example.com	d965b3ba3b5d572d6311502571ac135547980b001d7e8f8a7879f20f9c01c45d7f1003ccfee8135b8ca0999462659b6f4111ea6dd08715e671d527e133a2bedd.ab0800cbb2ff8431f423059f4f128337	customer	2025-10-06 21:18:30.369424	local	\N	t	\N	\N	\N
-f02556d6-05ac-43fa-9681-fe99e3c67b88	admin1234	inthebox.bss@gmail.com	aa3f0defcfd3e798bb5aab9210733bab58ced0f3b771d219acba572ac90f9ded2bbc7f75832df56bb3148de7174b0e51461ac876d58dac849b34ba29ccf08c12.69ab74cb41eb8961c3885ae2a47bdbb2	admin	2025-10-03 20:33:11.330897	local	\N	t	\N	\N	\N
-755432dc-1d88-41d7-a84e-9a7365439558	Ankush Khandelwal	khandelwal.ankush@gmail.com	\N	customer	2025-09-06 04:46:11.662126	google	117106494720500094210	t	Ankush Khandelwal	2068414315	549b4550-a34f-46ed-8787-f0a730bbae6f
-62ac2a8b-8fc6-4279-b9f9-f933457081f4	restaurant_owner	inthebox.busine@gmail.com	4b28507dac797721f29f40d8443f85dca0bf1690278db9b572f8a8f064209ed7bf04eed788e8ee027376f6b6c9ad24e11594a3761e1910988d05c87d27e917ec.62e1b5e4e158078fc2186f211d275ab1	restaurant_owner	2025-10-03 19:58:57.631651	local	\N	t	Ankush Khandelwal	2068414315	\N
-2d295882-1a08-4c08-a7db-8847a37a7d3a	restaurant_1	inthebox.bus@gmail.com	a95e6e199754e808f6910b741489a990c2267f6d5540a75d84170d0b8916bae2f3f703d8ce17806039114b79799d5347d79fce1124e9dd5944fab12bff90b2ba.39fa0f51346a7c98233a71510ffb1c52	restaurant_owner	2025-10-04 03:28:59.567241	local	\N	t	Gaurav	1234567890	\N
-a50bd5a9-7f7a-4360-bf86-7646bd740165	ankush0407	inthebox.business@gmail.com	96cbe75d936a3e75d64dd0782abd6b2591beeee64ac61cd1e1895f9b26a8b1506aa1148a74152fcc6e79c139b7191144ec6df26908a339da06a88bbaacb9bc18.da43a957f4d09a3f56eded86e66a09aa	admin	2025-10-03 19:48:02.645639	local	\N	t	Ankush Khandelwal	2068414315	8414d534-7523-4196-9053-63fc28a535a6
+COPY public.users (id, username, email, password, role, created_at, provider, provider_id, profile_complete, full_name, phone_number, delivery_location_id, email_verified) FROM stdin;
+e2760513-8a67-41ea-96fe-abc7c67cf12c	restaurant_owner1	owner1@restaurant.com	7c2f2b59f2c36d3267419a4224c97d8b2fee3ca3ccdd570d2f93e02ec831739839d9467f9ba5e216c1422dccc388855ffeb6706aff9bc5155046c6ffe379665d.3fd56d73532bb771c8f54fa6b529b93b	restaurant_owner	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N	f
+f0a60d55-97e4-4d4c-a3ec-f7cb795cd3de	restaurant_owner2	owner2@restaurant.com	7c2f2b59f2c36d3267419a4224c97d8b2fee3ca3ccdd570d2f93e02ec831739839d9467f9ba5e216c1422dccc388855ffeb6706aff9bc5155046c6ffe379665d.3fd56d73532bb771c8f54fa6b529b93b	restaurant_owner	2025-09-02 21:54:11.552293	local	\N	t	\N	\N	\N	f
+010825c4-effd-45ba-8c6e-14b3d44167df	cart-user1-fYr5Zw	user1-3190BI@test.com	fcc6c8734a895a055b1909c8abb8d57f9e35f39cf8b62ad36d0d47abaf969e85de89e8e1edee5018e9161e8a8cfc6cd9a8d2ea716ba65ed9fa598696bcc4792d.b391e1bfe60c27621a7a1cc0176991f6	customer	2025-11-12 18:47:53.565428	local	\N	t	cart-user1-fYr5Zw Fullname	2065550100	8414d534-7523-4196-9053-63fc28a535a6	t
+dd2d404e-9d3e-44cb-9078-8f215754ac99	restaurant_owner3	inthebox.busines@gmail.com	0d9addd3e1664e59e60ce6410f364ccbdb5f9ff2967b2b2ca40206354eaebb07cc4f5aae6d3ce7e43312a0ab67bb07aadee81588c14a58d470a5ffa2887ae904.90dbd780d3b7e828810cd42455ee95c9	restaurant_owner	2025-09-03 00:02:39.803146	local	\N	t	Ankush Khandelwal	1234567890	\N	f
+e82ad8ec-5841-41fc-99fe-767cfe4e91aa	admin123	admin@gmail.com	admin123	admin	2025-09-09 22:05:31.264984	local	\N	t	\N	\N	\N	f
+b64a7aae-fcd8-42da-be93-8d85f9b2385a	test_restaurant	test@restaurant.com	$2b$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi	restaurant_owner	2025-09-02 23:57:09.618763	local	\N	t	\N	\N	\N	f
+0570d127-9d80-4c3e-ab7a-390fc11cf6ec	cart-user2-n_bi1l	user2-sxZ0GM@test.com	d194d06ad20026923e60312a7337462d80a566135f90be53e67f68c24530f2dddf3b4578a2f170307f3e45c77a7d75c0656895a5e805ddf106ef18253066d183.14605353cf9e66208d32a25cfa5fa7d2	customer	2025-11-12 18:56:37.815655	local	\N	t	\N	\N	\N	t
+62ac2a8b-8fc6-4279-b9f9-f933457081f4	restaurant_owner	inthebox.busine@gmail.com	4b28507dac797721f29f40d8443f85dca0bf1690278db9b572f8a8f064209ed7bf04eed788e8ee027376f6b6c9ad24e11594a3761e1910988d05c87d27e917ec.62e1b5e4e158078fc2186f211d275ab1	restaurant_owner	2025-10-03 19:58:57.631651	local	\N	t	Ankush Khandelwal	2068414315	\N	f
+2d295882-1a08-4c08-a7db-8847a37a7d3a	restaurant_1	inthebox.bus@gmail.com	a95e6e199754e808f6910b741489a990c2267f6d5540a75d84170d0b8916bae2f3f703d8ce17806039114b79799d5347d79fce1124e9dd5944fab12bff90b2ba.39fa0f51346a7c98233a71510ffb1c52	restaurant_owner	2025-10-04 03:28:59.567241	local	\N	t	Gaurav	1234567890	\N	f
+d5a96910-9f09-4ab1-85b6-370ff2fe0904	ankush0407	khandelwal.ankush@gmail.com	75675605f7521801de5ea5be3d8c91fbd0d05104a45c160ed2a0f3fb7417d8c004c76b4d2d2213b85588ac1bfcd29dcda3aa76d023f1f3124e1a79a39f581d7d.38638a00e3ef03e5e169a8c23d01138a	customer	2025-11-12 13:35:55.843818	local	\N	t	Ankush Khandelwal	2068414315	8414d534-7523-4196-9053-63fc28a535a6	t
+d9c26800-bdd7-411c-b54d-5ddd2316aa8c	cart-test-customer-DvRdn9	customer-DvRdn9@test.com	addc19078cb775a120c5b247e16618eb294abc13853cee975fadb489672e6db1226548b9c434c590243f61e64ff26a21f8b8ee22968857a127628eaa600d4d09.00bfcccd6e656126ea0407924a099c4b	customer	2025-11-12 18:42:09.300847	local	\N	t	\N	\N	\N	t
 \.
 
 
 --
--- Name: orders_order_number_seq; Type: SEQUENCE SET; Schema: public; Owner: -
+-- Name: orders_order_number_seq; Type: SEQUENCE SET; Schema: public; Owner: neondb_owner
 --
 
-SELECT pg_catalog.setval('public.orders_order_number_seq', 9, true);
+SELECT pg_catalog.setval('public.orders_order_number_seq', 10, true);
 
 
 --
--- Name: delivery_buildings delivery_buildings_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: delivery_buildings delivery_buildings_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.delivery_buildings
@@ -350,7 +416,7 @@ ALTER TABLE ONLY public.delivery_buildings
 
 
 --
--- Name: delivery_locations delivery_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: delivery_locations delivery_locations_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.delivery_locations
@@ -358,7 +424,15 @@ ALTER TABLE ONLY public.delivery_locations
 
 
 --
--- Name: lunchboxes lunchboxes_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: email_verifications email_verifications_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.email_verifications
+    ADD CONSTRAINT email_verifications_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: lunchboxes lunchboxes_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.lunchboxes
@@ -366,7 +440,7 @@ ALTER TABLE ONLY public.lunchboxes
 
 
 --
--- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items order_items_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -374,7 +448,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: orders orders_order_number_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_order_number_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -382,7 +456,7 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -390,7 +464,23 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: restaurants restaurants_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: password_resets password_resets_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_pkey PRIMARY KEY (id);
+
+
+--
+-- Name: password_resets password_resets_token_key; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_token_key UNIQUE (token);
+
+
+--
+-- Name: restaurants restaurants_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.restaurants
@@ -398,7 +488,7 @@ ALTER TABLE ONLY public.restaurants
 
 
 --
--- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: session session_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.session
@@ -406,7 +496,7 @@ ALTER TABLE ONLY public.session
 
 
 --
--- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_email_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.users
@@ -414,7 +504,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_pkey; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.users
@@ -422,7 +512,7 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: -
+-- Name: users users_username_unique; Type: CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.users
@@ -430,22 +520,22 @@ ALTER TABLE ONLY public.users
 
 
 --
--- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: -
+-- Name: IDX_session_expire; Type: INDEX; Schema: public; Owner: neondb_owner
 --
 
 CREATE INDEX "IDX_session_expire" ON public.session USING btree (expire);
 
 
 --
--- Name: delivery_buildings delivery_buildings_delivery_location_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: delivery_buildings delivery_buildings_delivery_location_id_delivery_locations_id_f; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.delivery_buildings
-    ADD CONSTRAINT delivery_buildings_delivery_location_id_fkey FOREIGN KEY (delivery_location_id) REFERENCES public.delivery_locations(id);
+    ADD CONSTRAINT delivery_buildings_delivery_location_id_delivery_locations_id_f FOREIGN KEY (delivery_location_id) REFERENCES public.delivery_locations(id);
 
 
 --
--- Name: lunchboxes lunchboxes_restaurant_id_restaurants_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: lunchboxes lunchboxes_restaurant_id_restaurants_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.lunchboxes
@@ -453,7 +543,7 @@ ALTER TABLE ONLY public.lunchboxes
 
 
 --
--- Name: order_items order_items_lunchbox_id_lunchboxes_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items order_items_lunchbox_id_lunchboxes_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -461,7 +551,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: order_items order_items_order_id_orders_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: order_items order_items_order_id_orders_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.order_items
@@ -469,7 +559,7 @@ ALTER TABLE ONLY public.order_items
 
 
 --
--- Name: orders orders_customer_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_customer_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -477,15 +567,15 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: orders orders_delivery_building_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_delivery_building_id_delivery_buildings_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
-    ADD CONSTRAINT orders_delivery_building_id_fkey FOREIGN KEY (delivery_building_id) REFERENCES public.delivery_buildings(id);
+    ADD CONSTRAINT orders_delivery_building_id_delivery_buildings_id_fk FOREIGN KEY (delivery_building_id) REFERENCES public.delivery_buildings(id);
 
 
 --
--- Name: orders orders_restaurant_id_restaurants_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: orders orders_restaurant_id_restaurants_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.orders
@@ -493,7 +583,15 @@ ALTER TABLE ONLY public.orders
 
 
 --
--- Name: restaurants restaurants_delivery_location_id_delivery_locations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: password_resets password_resets_user_id_fkey; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
+--
+
+ALTER TABLE ONLY public.password_resets
+    ADD CONSTRAINT password_resets_user_id_fkey FOREIGN KEY (user_id) REFERENCES public.users(id);
+
+
+--
+-- Name: restaurants restaurants_delivery_location_id_delivery_locations_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.restaurants
@@ -501,11 +599,25 @@ ALTER TABLE ONLY public.restaurants
 
 
 --
--- Name: restaurants restaurants_owner_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: -
+-- Name: restaurants restaurants_owner_id_users_id_fk; Type: FK CONSTRAINT; Schema: public; Owner: neondb_owner
 --
 
 ALTER TABLE ONLY public.restaurants
     ADD CONSTRAINT restaurants_owner_id_users_id_fk FOREIGN KEY (owner_id) REFERENCES public.users(id);
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR SEQUENCES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON SEQUENCES TO neon_superuser WITH GRANT OPTION;
+
+
+--
+-- Name: DEFAULT PRIVILEGES FOR TABLES; Type: DEFAULT ACL; Schema: public; Owner: cloud_admin
+--
+
+ALTER DEFAULT PRIVILEGES FOR ROLE cloud_admin IN SCHEMA public GRANT ALL ON TABLES TO neon_superuser WITH GRANT OPTION;
 
 
 --
