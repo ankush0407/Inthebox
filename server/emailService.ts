@@ -36,7 +36,7 @@ class ResendEmailService implements EmailService {
   private apiKey: string;
   private fromEmail: string;
 
-  constructor(apiKey: string, fromEmail: string = 'onboarding@resend.dev') {
+  constructor(apiKey: string, fromEmail: string = 'info@intheboxgroup.com') {
     this.apiKey = apiKey;
     this.fromEmail = fromEmail;
   }
