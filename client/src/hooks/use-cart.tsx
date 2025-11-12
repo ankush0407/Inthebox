@@ -1,5 +1,6 @@
-import { createContext, ReactNode, useContext, useState } from "react";
+import { createContext, ReactNode, useContext, useState, useEffect, useRef } from "react";
 import { Lunchbox } from "@shared/schema";
+import { useAuth } from "./use-auth";
 
 export interface CartItem {
   lunchbox: Lunchbox;
@@ -23,6 +24,24 @@ const CartContext = createContext<CartContextType | null>(null);
 
 export function CartProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const { user } = useAuth();
+  const previousUserIdRef = useRef<string | null | undefined>(undefined);
+  const isFirstRenderRef = useRef(true);
+
+  useEffect(() => {
+    const currentUserId = user?.id || null;
+    
+    if (isFirstRenderRef.current) {
+      isFirstRenderRef.current = false;
+      previousUserIdRef.current = currentUserId;
+      return;
+    }
+    
+    if (previousUserIdRef.current !== currentUserId) {
+      setItems([]);
+      previousUserIdRef.current = currentUserId;
+    }
+  }, [user?.id]);
 
   const addItem = (lunchbox: Lunchbox, restaurantName: string, restaurantDeliveryFee: number) => {
     setItems(current => {
