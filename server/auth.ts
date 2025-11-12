@@ -12,6 +12,14 @@ import { User as SelectUser } from "@shared/schema";
 declare global {
   namespace Express {
     interface User extends SelectUser {}
+    interface SessionData {
+      pendingRegistration?: {
+        username: string;
+        email: string;
+        password: string;
+        role: string;
+      };
+    }
   }
 }
 
@@ -171,24 +179,30 @@ export function setupAuth(app: Express) {
 
   app.post("/api/register", async (req, res, next) => {
     try {
-      const existingUserByUsername = await storage.getUserByUsername(req.body.username);
+      const { username, email, password, role } = req.body;
+
+      const existingUserByUsername = await storage.getUserByUsername(username);
       if (existingUserByUsername) {
         return res.status(400).json({ error: "Username already exists" });
       }
 
-      const existingUserByEmail = await storage.getUserByEmail(req.body.email);
+      const existingUserByEmail = await storage.getUserByEmail(email);
       if (existingUserByEmail) {
         return res.status(400).json({ error: "Email already exists" });
       }
 
-      const user = await storage.createUser({
-        ...req.body,
-        password: await hashPassword(req.body.password),
-      });
+      const hashedPassword = await hashPassword(password);
 
-      req.login(user, (err) => {
-        if (err) return next(err);
-        res.status(201).json(user);
+      req.session.pendingRegistration = {
+        username,
+        email,
+        password: hashedPassword,
+        role: role || 'customer',
+      };
+
+      res.status(200).json({ 
+        message: "Registration data saved. Please verify your email.",
+        email 
       });
     } catch (error: any) {
       console.error("Registration error:", error);
