@@ -32,7 +32,7 @@ Preferred communication style: Simple, everyday language.
 - **Database**: PostgreSQL with Neon serverless hosting
 - **ORM**: Drizzle ORM for type-safe database operations and migrations
 - **Schema Design**: Normalized relational structure with proper foreign key relationships
-- **Tables**: users, restaurants, lunchboxes, orders, orderItems with appropriate indexes and constraints
+- **Tables**: users, restaurants, lunchboxes, orders, orderItems, emailVerifications, passwordResets with appropriate indexes and constraints
 - **Data Types**: PostgreSQL enums for user roles and order statuses, UUIDs for primary keys
 
 ### Authentication & Authorization
@@ -40,6 +40,8 @@ Preferred communication style: Simple, everyday language.
 - **Password Security**: Scrypt hashing with salt for secure password storage
 - **Role-Based Access**: Three-tier system (customer, restaurant_owner, admin) with route protection
 - **Session Storage**: PostgreSQL-backed sessions for scalability and persistence
+- **Email Verification**: 6-digit verification codes sent after registration, stored with expiry in database
+- **Password Reset**: Multi-step flow with 6-digit codes for secure password recovery
 
 ## External Dependencies
 
